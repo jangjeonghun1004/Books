@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>독서 발제문: 크리스마스 캐럴</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Gowun Batang', serif;
+            background-color: #fdfbf7; /* 따뜻한 종이 색상 */
+            color: #2d3748;
+            line-height: 1.8;
+        }
+        .book-title {
+            font-family: 'Noto Serif KR', serif;
+        }
+        .quote-box {
+            background-color: #f4f1ea;
+            border-left: 4px solid #c53030; /* 크리스마스 레드 */
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-style: italic;
+            color: #555;
+            white-space: pre-line; /* 줄바꿈 보존 */
+        }
+        .question-box {
+            background-color: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .question-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .memo-area {
+            width: 100%;
+            min-height: 100px;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.375rem;
+            background-color: #fafafa;
+            font-family: 'Gowun Batang', serif;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+        .memo-area:focus {
+            outline: none;
+            border-color: #c53030;
+            background-color: #fff;
+        }
+        .christmas-accent {
+            color: #c53030;
+        }
+        .page-badge {
+            background-color: #2f855a; /* 크리스마스 그린 */
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen">
+
+    <!-- Header Section -->
+    <header class="bg-[#c53030] text-white py-12 px-4 shadow-lg relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10 pattern-dots"></div>
+        <div class="max-w-3xl mx-auto text-center relative z-10">
+            <div class="mb-4 text-yellow-200"><i class="fas fa-snowflake fa-2x animate-pulse"></i></div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-2 book-title">크리스마스 캐럴</h1>
+            <p class="text-xl opacity-90 mb-6">A Christmas Carol</p>
+            
+            <div class="inline-block bg-white/10 backdrop-blur-sm px-6 py-3 rounded-lg border border-white/20">
+                <p class="text-sm md:text-base">
+                    <span class="font-bold mr-2">지은이</span> 찰스 디킨스 &nbsp;|&nbsp; 
+                    <span class="font-bold mr-2">옮김</span> 김영진 &nbsp;|&nbsp; 
+                    <span class="font-bold mr-2"><i class="far fa-calendar-alt"></i></span> 2025년 12월 27일
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-12">
+
+        <!-- Character Section -->
+        <section class="mb-16">
+            <h2 class="text-2xl font-bold mb-6 text-center border-b-2 border-[#c53030] pb-2 inline-block mx-auto w-full md:w-auto px-12">
+                등장인물
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow text-center border-t-4 border-gray-600">
+                    <h3 class="font-bold text-lg">스크루지</h3>
+                    <p class="text-sm text-gray-500">주인공</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center border-t-4 border-gray-400">
+                    <h3 class="font-bold text-lg">말리</h3>
+                    <p class="text-sm text-gray-500">스크루지의 동업자</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center border-t-4 border-green-600">
+                    <h3 class="font-bold text-lg">밥</h3>
+                    <p class="text-sm text-gray-500">서기 (직원)</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center border-t-4 border-yellow-500">
+                    <h3 class="font-bold text-lg">타이니 팀</h3>
+                    <p class="text-sm text-gray-500">밥의 막내아들</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center border-t-4 border-blue-500">
+                    <h3 class="font-bold text-lg">프레드</h3>
+                    <p class="text-sm text-gray-500">스크루지의 조카</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow text-center border-t-4 border-purple-500">
+                    <h3 class="font-bold text-lg">토퍼</h3>
+                    <p class="text-sm text-gray-500">프레드의 친구</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Questions Section -->
+        <section id="questions-container">
+            <!-- Questions will be rendered here -->
+        </section>
+
+        <div class="text-center mt-12 mb-20">
+            <button onclick="clearMemos()" class="text-sm text-gray-500 hover:text-red-600 underline">
+                <i class="fas fa-trash-alt mr-1"></i>모든 메모 초기화
+            </button>
+            <p class="text-xs text-gray-400 mt-2">* 작성하신 내용은 브라우저에 자동 저장됩니다.</p>
+        </div>
+
+    </main>
+
+    <footer class="bg-gray-800 text-gray-300 py-8 text-center">
+        <p class="font-family-serif">&copy; 2025 독서 모임. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Data Structure for Questions
+        const questions = [
+            {
+                id: 1,
+                page: "13p",
+                quote: "스크루지는 간판에 적힌 말리의 이름을 지워 버리지 않았다.\n…\n말리는 심장도 없는 몰인정한 놈이라는 소리를 자주 들어 왔지만 스크루지는 이제껏 한 번도 그 말을 믿어 본 적이  없었다.",
+                text: "1. 스크루지가 간판에서 말리의 이름을 지우지 않은 이유는 무엇일까요? 비용 절감을 위한 것일까요, 아니면 말리에 대한 인간적인 애정 때문일까요?"
+            },
+            {
+                id: 2,
+                page: "26p",
+                quote: "나랑은 상관 없는 일이오. 모름지기 사내란 자기 일 하나만 잘하면 그걸로 충분하지, 남의 일까지 간섭해서는 안 되는 법이오. 난, 내 일만으로도 코가 석자인 사람이오. 그러니 이제 그만 가 보시오. 신사 양반들.",
+                text: "2. 스크루지의 태도에 대해 사회적 비난이 가해질 수 있다고 보십니까? 만약 그렇다면, 그 비난의 근거는 무엇이며, 그렇지 않다면 비난의 대상이 될 수 없는 이유는 무엇일까요?"
+            },
+            {
+                id: 3,
+                page: "45p",
+                quote: "사람은 살아생전 자신의 영혼을 자유로이 풀어 주어야 할 의무가 있네. 영혼이 여기저기 돌아 다니면서 다른 사람과 폭넓게 사귈 수 있도록 해 주어야 한단 말일세. 살아서 그렇게 하지 못한 영혼은 죽어서 떠돌아 다니도록 저주를 받지. 살아서 자기가 놓쳐 버린 행복이 무엇인지를 말이야.",
+                text: "3. 찰스 디킨스는 “밖으로 나가 사람을 만나라”는 삶의 태도를 제시합니다. 반면, 쇼펜하우어는 '마흔에 읽는 쇼펜하우어'를 통해 “혼자 있는 시간의 힘을 길러라”고 조언합니다.<br><br>당신은 현재 어떤 삶의 방식을 따르고 있다고 생각하십니까?<br>만약 현재 삶의 방식에 변화를 주려고 한다면, 그 이유는 무엇입니까?"
+            },
+            {
+                id: 4,
+                page: "111p",
+                quote: "자신들이 저녁에 먹을 요리를 들고 빵집으로 향하는 사람들이 이 골목, 저 골목에서 쏟아져 나왔다. 집에 오븐 하나 없어 빵집에서 음식을 구워 오는 이 가난한 미식가들의 모습이 유령의 관심을 유난히 끄는 듯했다.\n…\n“일요일 마다 빵집을 비롯해서 모든 가게가 문을 닫기를 바라시지 않던가요?”",
+                text: "4. 당시 런던의 가난한 사람들은 집에 오븐이 없었기 때문에, 일요일이나 크리스마스에는 빵집의 대형 오븐을 빌려 요리를 했습니다. 하지만 일부 보수적인 종교인들은 '안식일(일요일)에는 빵집도 문을 닫아야 한다'고 주장하며, 가난한 사람들이 따뜻한 식사를 할 기회마저 막으려 했습니다.<br><br>작가 찰스 디킨스는 이러한 상황을 자신의 소설을 통해 '종교적 위선에 대한 비판'이라는 개인적인 감정을 드러내는 장으로 활용했습니다.<br><br>문학은, 문학의 자체 영역에만 머물러야 할까요, 아니면 사회적 비판까지 포함하는 더 넓은 역할을 수행해야 할까요?"
+            },
+            {
+                id: 5,
+                page: "114p",
+                quote: "밥(스크루지의 사무실에서 일하는 서기)의 일주일 수입은 고작 15실링이다. 가난뱅이의 방 네 칸짜리 집\n…\n낡은 드레스에 싸구려 리본을 달아 멋을 냈는데 6펜스짜리 리본치고는 그럭저럭 괜찮아 보였다. \n…\n이 셔츠는 원래 밥의 셔츠였는데 크리스마스를 맞아 이 집의 대를 이어 갈 장남에게 특별히 물려준 것이었다.\n…\n크래칫 부인이 딸의 뺨에 열두 번쯤 입을 맞추며 숄과 모자를 벗겨 주느라 부산을 떨었다.\n…\n옷장 뒤에서 뛰어나와 아빠의 품에 안겼다.",
+                text: "5. 찰스 디킨스는 이 작품에서 가난하지만 화목한 밥 가족의 저녁 식사 장면을 통해 진정한 '행복'이 무엇인지 묻습니다. 물질적 어려움 속에서도 정신적 만족을 누리는 것이 작가가 제시하는 행복의 조건입니다. 여러분은 이러한 작가의 관점에 동의하십니까? 아니면 이는 현실과는 거리가 먼 문학 속의 이상일 뿐이라고 생각하십니까?"
+            },
+            {
+                id: 6,
+                page: "125p",
+                quote: "팀은 제 아빠에게 바싹 붙어 앉아 있었고 밥은 유난히 그 아이만을 사랑하는 듯, 누구에게 빼앗길까 두려워 자기 곁에 꼭 붙들어 두고 싶은 듯 아이의 가녀린 작은 손을 꼭 움켜쥐고 있었다. 스크루지가 전에 느껴 본 적이 없는 심정으로 유령에게 물었다.\n“유령님, 저 아이가 살 수 있겠지요. 그렇지요?”\n…\n“안 돼요, 안 됩니다요! 친철하신 유령님, 제발 저 아이가 죽는 일은 없을 거라고 말씀해 주세요, 제발!” 스크루지가 소리쳤다.",
+                text: "6. 가난한 이웃을 돕기 위해 기부를 요청한 신사들에게 스크루지는 \"어차피 죽을 목숨이라면 죽는 게 더 낫습니다. 남아도는 인구를 줄이는 데 도움이 될 수도 있을 테니까요.\"라고 냉정하게 말했습니다. 이처럼 타인의 생사에 무관심했던 스크루지가 왜 꼬마 팀의 생존 문제에는 직접적으로 개입하게 되었는지, 이에 대한 여러분의 생각을 나눠주세요."
+            },
+            {
+                id: 7,
+                page: "138p",
+                quote: "일부러 넘어지고 부딪치면서 통통한 처제를 쫓아다닌 토퍼의 연극은 순진한 인간 본성을 모욕하는 행위 였다.\n…\n통통한 처제가 어디에 서 있는지 늘 알고 있으며 다른 사람은 잡을 생각조차 하지 않았다.\n…\n토퍼는 여러분을 잡는 척하면서 잽싸게 방향을 틀어 통통한 처제 쪽으로 다가갔을 것이다.",
+                text: "7. 만약 당신에게 호감을 표현하는 이성이 있다면, 어떻게 반응하시겠습니까? 사랑을 얻기 위해 적극적으로 다가가야 할까요, 아니면 상대방의 접근을 기다려야 할까요? 여러분만의 효과적인 이성 유혹 비결이 있다면 공유해 주세요."
+            },
+            {
+                id: 8,
+                page: "148p",
+                quote: "이 아이들은 인간의 아이들이다. 나한테 매달려서 자기들을 이 지경으로 만든 제 아버지들에 대한 불만을 호소하고 있지. 사내 아이는 ‘무지’ 이고 계집아이는 ‘궁핍’ 이니라.",
+                text: "8. 작가 찰스 디킨스는 '현재 크리스마스의 유령'을 통해 인간들에게 '무지'와 '궁핍'을 경계해야 함을 강조하고 있습니다. 여기서 작가 찰스 디킨스가 말하고자 하는 '무지'와 '궁핍'이 구체적으로 무엇을 의미하는지에 대해 여러분의 의견을 이야기해 주세요."
+            },
+            {
+                id: 9,
+                page: "125p / 171p",
+                quote: "📖 125(현재의 크리스마스 유령)\n“유령님, 저 아이가 살 수 있겠지요. 그렇지요?”\n…\n“안 돼요, 안 됩니다요! 친철하신 유령님, 제발 저 아이가 죽는 일은 없을 거라고 말씀해 주세요, 제발!” 스크루지가 소리쳤다.\n\n📖 171(미래의 크리스마스 유령)\n시체는 어둡고 텅 빈 집에 홀로 누워 있었다. 생전에 이러저러한 은혜를 입었노라며 심심한 애도의 말을 전하기 위해 찾아오는 남자도 여자도 어린아이도 없었다.\n…\n“유령님 이곳은 무서운 곳입니다요. 이곳을 떠나서라도 여기서 얻은 교훈을 절대 잊어버리지 않을 것입니다요.! 믿어 주십시오. 그러니 이제 그만 다른 곳으로  가도록 하지요.!” 스크루지가 말했다.\n…\n유령과 스크루지는 밥 크래칫의 누추한  거실에 들어와 있었다.\n…\n꼬맹이 팀이 워낙 가벼웠던 데다 아빠(밥)는 그 애를 무척 사랑하셨으니까.",
+                text: "9. 스크루지는 '현재의 크리스마스 유령'을 통해 꼬마 팀의 죽음을 걱정했지만, '미래의 크리스마스 유령'을 통해 실제로 꼬마 팀이 죽는다는 사실을 확인하고도 슬픔이나 애도를 전혀 느끼지 못했습니다. 이러한 스크루지의 상반된 태도에 대해 여러분은 어떻게 생각하십니까?"
+            }
+        ];
+
+        const container = document.getElementById('questions-container');
+
+        // Render Questions
+        questions.forEach((q, index) => {
+            const html = `
+                <div class="question-box animate-fade-in" style="animation-delay: ${index * 0.1}s">
+                    <div class="flex items-center mb-2">
+                        <span class="page-badge"><i class="fas fa-book-open mr-1"></i> ${q.page}</span>
+                    </div>
+                    
+                    <div class="quote-box">
+                        <i class="fas fa-quote-left text-red-200 text-xl mr-2"></i>
+                        ${q.quote}
+                    </div>
+
+                    <h3 class="text-lg md:text-xl font-bold mt-4 mb-4 text-gray-800 leading-relaxed">
+                        ${q.text}
+                    </h3>
+
+                    <textarea 
+                        id="memo-${q.id}" 
+                        class="memo-area" 
+                        placeholder="이곳에 당신의 생각을 자유롭게 기록해 보세요..."
+                        oninput="saveMemo(${q.id}, this.value)"
+                    ></textarea>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+
+        // Load Memos from LocalStorage
+        window.onload = function() {
+            questions.forEach(q => {
+                const savedMemo = localStorage.getItem(`christmas_carol_memo_${q.id}`);
+                if (savedMemo) {
+                    document.getElementById(`memo-${q.id}`).value = savedMemo;
+                }
+            });
+        };
+
+        // Save Memo Function
+        function saveMemo(id, value) {
+            localStorage.setItem(`christmas_carol_memo_${id}`, value);
+        }
+
+        // Clear All Memos
+        function clearMemos() {
+            if(confirm("작성하신 모든 메모를 삭제하시겠습니까?")) {
+                questions.forEach(q => {
+                    localStorage.removeItem(`christmas_carol_memo_${q.id}`);
+                    document.getElementById(`memo-${q.id}`).value = "";
+                });
+                alert("삭제되었습니다.");
+            }
+        }
+    </script>
+</body>
+</html>
