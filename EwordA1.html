@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A1 기초 영단어 마스터 (완전판)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .eng-font {
+            font-family: 'Poppins', sans-serif;
+        }
+        .card-container {
+            perspective: 1000px;
+        }
+        .card {
+            position: relative;
+            width: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+            background-color: #ffffff;
+            overflow-y: auto;
+            justify-content: flex-start;
+            padding-top: 2rem;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white p-4 shadow-md z-10 shrink-0">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <span id="header-title">A1 영단어장</span>
+            </h1>
+            <div class="text-xs font-medium bg-indigo-700 px-3 py-1 rounded-full">
+                학습률: <span id="progress-text">0%</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col p-4 w-full max-w-md mx-auto relative overflow-hidden">
+        
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="absolute inset-0 bg-gray-100 z-50 flex flex-col items-center justify-center">
+            <div class="loader mb-4"></div>
+            <p class="text-gray-600 font-medium">전체 단어 데이터 로딩 중...</p>
+            <p class="text-xs text-gray-400 mt-2" id="loading-count"></p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="flex w-full bg-gray-200 rounded-lg p-1 mb-4 shrink-0">
+            <button id="tab-study" onclick="switchTab('study')" class="flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all">학습 모드</button>
+            <button id="tab-list" onclick="switchTab('list')" class="flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all">단어 목록</button>
+        </div>
+
+        <!-- Study Mode View -->
+        <div id="view-study" class="w-full flex-1 flex flex-col relative h-full min-h-0">
+            
+            <!-- Filter Options -->
+            <div class="flex justify-between items-center mb-2 px-1 shrink-0">
+                <span class="text-sm text-gray-500" id="counter-text">1 / --</span>
+                <label class="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer">
+                    <input type="checkbox" id="hide-learned" class="form-checkbox text-indigo-600 rounded" onchange="toggleFilter()">
+                    <span>미암기 단어만 보기</span>
+                </label>
+            </div>
+
+            <!-- Flashcard Area -->
+            <div class="card-container w-full flex-1 relative mb-4 min-h-0">
+                <div class="card w-full h-full" id="flashcard" onclick="flipCard()">
+                    
+                    <!-- Front -->
+                    <div class="card-face p-6">
+                        <span class="text-sm text-gray-400 font-medium tracking-widest mb-2 uppercase">Tap to reveal</span>
+                        <h2 id="card-word" class="text-5xl font-bold text-gray-800 eng-font mb-4 text-center">Loading</h2>
+                        <button onclick="event.stopPropagation(); playAudio()" class="mt-4 p-3 bg-gray-100 rounded-full hover:bg-gray-200 text-indigo-600 transition-colors" title="발음 듣기">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                        </button>
+                        <div id="status-badge" class="mt-8 px-3 py-1 rounded text-xs font-bold hidden">
+                            암기 완료
+                        </div>
+                    </div>
+
+                    <!-- Back -->
+                    <div class="card-face card-back no-scrollbar p-6">
+                        <div class="w-full flex justify-between items-start mb-4 border-b pb-2">
+                            <div>
+                                <h3 id="card-word-back" class="text-3xl font-bold text-indigo-600 eng-font">Loading</h3>
+                                <p id="card-phonetic" class="text-gray-400 text-sm font-mono mt-1">/---/</p>
+                            </div>
+                            <button onclick="event.stopPropagation(); playAudio()" class="text-gray-400 hover:text-indigo-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div id="meanings-container" class="w-full space-y-4 text-left">
+                            <!-- Meanings will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex justify-between items-center gap-4 shrink-0">
+                <button onclick="prevCard()" class="p-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 active:scale-95 transition-transform text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+
+                <button id="btn-mark-learned" onclick="toggleLearned()" class="flex-1 py-3 bg-white border border-indigo-200 text-indigo-600 rounded-lg shadow-sm font-bold hover:bg-indigo-50 active:scale-95 transition-all flex justify-center items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>암기 완료로 표시</span>
+                </button>
+
+                <button onclick="nextCard()" class="p-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 active:scale-95 transition-transform text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- List Mode View (Hidden by default) -->
+        <div id="view-list" class="hidden w-full h-full flex-col bg-gray-50 rounded-lg shadow-inner overflow-hidden">
+            <div class="p-3 bg-white border-b flex justify-between items-center shrink-0 gap-2">
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <input type="text" id="search-input" onkeyup="filterList()" placeholder="단어 검색..." class="w-full pl-9 pr-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <button onclick="resetAllData()" class="text-xs text-red-500 underline hover:text-red-700 whitespace-nowrap">초기화</button>
+            </div>
+            <div id="word-list-container" class="flex-1 overflow-y-auto p-3 space-y-3">
+                <!-- Word list items injected here -->
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Data: Full A1 Level Words (Approx 900+ words) ---
+        // Format: [Word, Phonetic, "pos:meaning", "pos:meaning", ...]
+        const rawVocabData = [
+            // A - P (Previous Data)
+            ["a", "/ə/", "det:하나의"], ["about", "/əˈbaʊt/", "prep:~에 대하여", "adv:약"], ["above", "/əˈbʌv/", "prep:~위에"], ["across", "/əˈkrɒs/", "prep:~을 가로질러"], ["action", "/ˈæk.ʃən/", "n:행동, 조치"],
+            ["activity", "/ækˈtɪv.ə.ti/", "n:활동"], ["actor", "/ˈæk.tər/", "n:배우"], ["actress", "/ˈæk.trəs/", "n:여배우"], ["add", "/æd/", "v:더하다"], ["address", "/əˈdres/", "n:주소", "v:연설하다"],
+            ["adult", "/ˈæd.ʌlt/", "n:성인"], ["advice", "/ədˈvaɪs/", "n:조언"], ["afraid", "/əˈfreɪd/", "adj:두려워하는"], ["after", "/ˈɑːf.tər/", "prep:~후에"], ["afternoon", "/ˌɑːf.təˈnuːn/", "n:오후"],
+            ["again", "/əˈɡen/", "adv:다시"], ["age", "/eɪdʒ/", "n:나이"], ["ago", "/əˈɡəʊ/", "adv:~전에"], ["agree", "/əˈɡriː/", "v:동의하다"], ["air", "/eər/", "n:공기", "n:하늘"],
+            ["airport", "/ˈeə.pɔːt/", "n:공항"], ["all", "/ɔːl/", "det:모든", "pron:모두"], ["also", "/ˈɔːl.səʊ/", "adv:또한"], ["always", "/ˈɔːl.weɪz/", "adv:항상"], ["amazing", "/əˈmeɪ.zɪŋ/", "adj:놀라운"],
+            ["and", "/ænd/", "conj:그리고"], ["angry", "/ˈæŋ.ɡri/", "adj:화난"], ["animal", "/ˈæn.ɪ.məl/", "n:동물"], ["another", "/əˈnʌð.ər/", "det:또 다른"], ["answer", "/ˈɑːn.sər/", "n:대답", "v:대답하다"],
+            ["any", "/ˈen.i/", "det:어떤"], ["anyone", "/ˈen.i.wʌn/", "pron:누구든지"], ["anything", "/ˈen.i.θɪŋ/", "pron:무엇이든"], ["apartment", "/əˈpɑːt.mənt/", "n:아파트"], ["apple", "/ˈæp.l/", "n:사과"],
+            ["april", "/ˈeɪ.prəl/", "n:4월"], ["area", "/ˈeə.ri.ə/", "n:지역"], ["arm", "/ɑːrm/", "n:팔"], ["around", "/əˈraʊnd/", "prep:~주위에"], ["arrive", "/əˈraɪv/", "v:도착하다"],
+            ["art", "/ɑːrt/", "n:미술"], ["article", "/ˈɑː.tɪ.kəl/", "n:기사"], ["artist", "/ˈɑː.tɪst/", "n:예술가"], ["as", "/æz/", "prep:~로서", "conj:~할 때"], ["ask", "/ɑːsk/", "v:묻다, 요청하다"],
+            ["at", "/æt/", "prep:~에"], ["august", "/ɔːˈɡʌst/", "n:8월"], ["aunt", "/ɑːnt/", "n:이모, 고모"], ["autumn", "/ˈɔː.təm/", "n:가을"], ["away", "/əˈweɪ/", "adv:떨어져"],
+            ["baby", "/ˈbeɪ.bi/", "n:아기"], ["back", "/bæk/", "n:등, 뒤", "adv:뒤로"], ["bad", "/bæd/", "adj:나쁜"], ["bag", "/bæɡ/", "n:가방"], ["ball", "/bɔːl/", "n:공"],
+            ["banana", "/bəˈnɑː.nə/", "n:바나나"], ["band", "/bænd/", "n:밴드"], ["bank", "/bæŋk/", "n:은행"], ["bath", "/bɑːθ/", "n:욕조, 목욕"], ["bathroom", "/ˈbɑːθ.ruːm/", "n:화장실"],
+            ["be", "/biː/", "v:이다, 있다"], ["beach", "/biːtʃ/", "n:해변"], ["beautiful", "/ˈbjuː.tɪ.fəl/", "adj:아름다운"], ["because", "/bɪˈkɒz/", "conj:~때문에"], ["become", "/bɪˈkʌm/", "v:~이 되다"],
+            ["bed", "/bed/", "n:침대"], ["bedroom", "/ˈbed.ruːm/", "n:침실"], ["beer", "/bɪər/", "n:맥주"], ["before", "/bɪˈfɔːr/", "prep:~전에"], ["begin", "/bɪˈɡɪn/", "v:시작하다"],
+            ["behind", "/bɪˈhaɪnd/", "prep:~뒤에"], ["believe", "/bɪˈliːv/", "v:믿다"], ["below", "/bɪˈləʊ/", "prep:~아래에"], ["best", "/best/", "adj:최고의"], ["better", "/ˈbet.ər/", "adj:더 좋은"],
+            ["between", "/bɪˈtwiːn/", "prep:~사이에"], ["bicycle", "/ˈbaɪ.sɪ.kəl/", "n:자전거"], ["big", "/bɪɡ/", "adj:큰"], ["bike", "/baɪk/", "n:자전거"], ["bill", "/bɪl/", "n:계산서"],
+            ["bird", "/bɜːd/", "n:새"], ["birthday", "/ˈbɜːθ.deɪ/", "n:생일"], ["black", "/blæk/", "adj:검은", "n:검은색"], ["blog", "/blɒɡ/", "n:블로그"], ["blonde", "/blɒnd/", "adj:금발의"],
+            ["blue", "/bluː/", "adj:파란", "n:파란색"], ["boat", "/bəʊt/", "n:보트"], ["body", "/ˈbɒd.i/", "n:몸"], ["book", "/bʊk/", "n:책", "v:예약하다"], ["boot", "/buːt/", "n:부츠"],
+            ["bored", "/bɔːd/", "adj:지루한"], ["boring", "/ˈbɔː.rɪŋ/", "adj:지루하게 하는"], ["born", "/bɔːn/", "v:태어난"], ["both", "/bəʊθ/", "det:둘 다"], ["bottle", "/ˈbɒt.əl/", "n:병"],
+            ["box", "/bɒks/", "n:상자"], ["boy", "/bɔɪ/", "n:소년"], ["boyfriend", "/ˈbɔɪ.frend/", "n:남자친구"], ["bread", "/bred/", "n:빵"], ["break", "/breɪk/", "v:깨다", "n:휴식"],
+            ["breakfast", "/ˈbrek.fəst/", "n:아침식사"], ["bring", "/brɪŋ/", "v:가져오다"], ["brother", "/ˈbrʌð.ər/", "n:형제"], ["brown", "/braʊn/", "adj:갈색의", "n:갈색"], ["build", "/bɪld/", "v:짓다"],
+            ["building", "/ˈbɪl.dɪŋ/", "n:건물"], ["bus", "/bʌs/", "n:버스"], ["business", "/ˈbɪz.nɪs/", "n:사업"], ["busy", "/ˈbɪz.i/", "adj:바쁜"], ["but", "/bʌt/", "conj:그러나"],
+            ["butter", "/ˈbʌt.ər/", "n:버터"], ["buy", "/baɪ/", "v:사다"], ["by", "/baɪ/", "prep:~에 의해"], ["bye", "/baɪ/", "int:안녕 (작별)"], ["cafe", "/ˈkæf.eɪ/", "n:카페"],
+            ["cake", "/keɪk/", "n:케이크"], ["call", "/kɔːl/", "v:전화하다, 부르다"], ["camera", "/ˈkæm.rə/", "n:카메라"], ["can", "/kæn/", "v:할 수 있다", "n:깡통"], ["cannot", "/ˈkæn.ɒt/", "v:할 수 없다"],
+            ["capital", "/ˈkæp.ɪ.təl/", "n:수도; 자본"], ["car", "/kɑːr/", "n:자동차"], ["card", "/kɑːd/", "n:카드"], ["career", "/kəˈrɪər/", "n:경력"], ["carrot", "/ˈkær.ət/", "n:당근"],
+            ["carry", "/ˈkær.i/", "v:나르다"], ["cat", "/kæt/", "n:고양이"], ["cd", "/ˌsiːˈdiː/", "n:CD"], ["cent", "/sent/", "n:센트"], ["center", "/ˈsen.tər/", "n:중심"],
+            ["chair", "/tʃeər/", "n:의자"], ["change", "/tʃeɪndʒ/", "v:바꾸다", "n:변화, 잔돈"], ["chart", "/tʃɑːt/", "n:도표"], ["cheap", "/tʃiːp/", "adj:싼"], ["check", "/tʃek/", "v:확인하다"],
+            ["cheese", "/tʃiːz/", "n:치즈"], ["chicken", "/ˈtʃɪk.ɪn/", "n:닭, 닭고기"], ["child", "/tʃaɪld/", "n:아이"], ["chocolate", "/ˈtʃɒk.lət/", "n:초콜릿"], ["choose", "/tʃuːz/", "v:선택하다"],
+            ["cinema", "/ˈsɪn.ə.mə/", "n:영화관"], ["city", "/ˈsɪt.i/", "n:도시"], ["class", "/klɑːs/", "n:수업, 반"], ["classroom", "/ˈklɑːs.ruːm/", "n:교실"], ["clean", "/kliːn/", "adj:깨끗한", "v:청소하다"],
+            ["climb", "/klaɪm/", "v:오르다"], ["clock", "/klɒk/", "n:시계"], ["close", "/kləʊz/", "v:닫다", "adj:가까운"], ["clothes", "/kləʊðz/", "n:옷"], ["club", "/klʌb/", "n:클럽, 동호회"],
+            ["coat", "/kəʊt/", "n:코트"], ["coffee", "/ˈkɒf.i/", "n:커피"], ["cold", "/kəʊld/", "adj:추운", "n:감기"], ["college", "/ˈkɒl.ɪdʒ/", "n:대학"], ["color", "/ˈkʌl.ər/", "n:색깔"],
+            ["come", "/kʌm/", "v:오다"], ["common", "/ˈkɒm.ən/", "adj:흔한, 공통의"], ["company", "/ˈkʌm.pə.ni/", "n:회사"], ["compare", "/kəmˈpeər/", "v:비교하다"], ["computer", "/kəmˈpjuː.tər/", "n:컴퓨터"],
+            ["concert", "/ˈkɒn.sət/", "n:콘서트"], ["conversation", "/ˌkɒn.vəˈseɪ.ʃən/", "n:대화"], ["cook", "/kʊk/", "v:요리하다", "n:요리사"], ["cooking", "/ˈkʊk.ɪŋ/", "n:요리"], ["cool", "/kuːl/", "adj:시원한, 멋진"],
+            ["corn", "/kɔːn/", "n:옥수수"], ["corner", "/ˈkɔː.nər/", "n:모퉁이"], ["cost", "/kɒst/", "n:비용", "v:비용이 들다"], ["country", "/ˈkʌn.tri/", "n:나라, 시골"], ["course", "/kɔːs/", "n:강좌, 코스"],
+            ["cousin", "/ˈkʌz.ən/", "n:사촌"], ["cow", "/kaʊ/", "n:소"], ["cream", "/kriːm/", "n:크림"], ["create", "/kriˈeɪt/", "v:창조하다"], ["culture", "/ˈkʌl.tʃər/", "n:문화"],
+            ["cup", "/kʌp/", "n:컵"], ["customer", "/ˈkʌs.tə.mər/", "n:손님"], ["cut", "/kʌt/", "v:자르다"], ["dad", "/dæd/", "n:아빠"], ["dance", "/dɑːns/", "v:춤추다", "n:춤"],
+            ["dancer", "/ˈdɑːn.sər/", "n:댄서"], ["dancing", "/ˈdɑːn.sɪŋ/", "n:춤"], ["dangerous", "/ˈdeɪn.dʒər.əs/", "adj:위험한"], ["dark", "/dɑːk/", "adj:어두운"], ["date", "/deɪt/", "n:날짜, 데이트"],
+            ["daughter", "/ˈdɔː.tər/", "n:딸"], ["day", "/deɪ/", "n:날, 하루, 낮"], ["dear", "/dɪər/", "adj:친애하는"], ["december", "/dɪˈsem.bər/", "n:12월"], ["decide", "/dɪˈsaɪd/", "v:결정하다"],
+            ["delicious", "/dɪˈlɪʃ.əs/", "adj:맛있는"], ["describe", "/dɪˈskraɪb/", "v:묘사하다"], ["description", "/dɪˈskrɪp.ʃən/", "n:묘사"], ["design", "/dɪˈzaɪn/", "n:디자인", "v:디자인하다"], ["desk", "/desk/", "n:책상"],
+            ["detail", "/ˈdiː.teɪl/", "n:세부사항"], ["dialogue", "/ˈdaɪ.ə.lɒɡ/", "n:대화"], ["dictionary", "/ˈdɪk.ʃən.ər.i/", "n:사전"], ["die", "/daɪ/", "v:죽다"], ["diet", "/ˈdaɪ.ət/", "n:식사, 다이어트"],
+            ["difference", "/ˈdɪf.ər.əns/", "n:차이"], ["different", "/ˈdɪf.ər.ənt/", "adj:다른"], ["difficult", "/ˈdɪf.ɪ.kəlt/", "adj:어려운"], ["dinner", "/ˈdɪn.ər/", "n:저녁식사"], ["dirty", "/ˈdɜː.ti/", "adj:더러운"],
+            ["discuss", "/dɪˈskʌs/", "v:토론하다"], ["dish", "/dɪʃ/", "n:접시, 요리"], ["do", "/duː/", "v:하다"], ["doctor", "/ˈdɒk.tər/", "n:의사"], ["dog", "/dɒɡ/", "n:개"],
+            ["dollar", "/ˈdɒl.ər/", "n:달러"], ["door", "/dɔːr/", "n:문"], ["down", "/daʊn/", "adv:아래로", "prep:아래에"], ["downstairs", "/ˌdaʊnˈsteəz/", "adv:아래층으로"], ["draw", "/drɔː/", "v:그리다, 끌다"],
+            ["drawing", "/ˈdrɔː.ɪŋ/", "n:그림"], ["dream", "/driːm/", "n:꿈", "v:꿈꾸다"], ["dress", "/dres/", "n:드레스, 원피스", "v:옷을 입다"], ["drink", "/drɪŋk/", "v:마시다", "n:음료"], ["drive", "/draɪv/", "v:운전하다"],
+            ["driver", "/ˈdraɪ.vər/", "n:운전사"], ["during", "/ˈdʒʊə.rɪŋ/", "prep:~동안"], ["dvd", "/ˌdiː.viːˈdiː/", "n:DVD"], ["each", "/iːtʃ/", "det:각각의"], ["ear", "/ɪər/", "n:귀"],
+            ["early", "/ˈɜː.li/", "adj:일찍, 이른"], ["earth", "/ɜːθ/", "n:지구"], ["east", "/iːst/", "n:동쪽"], ["easy", "/ˈiː.zi/", "adj:쉬운"], ["eat", "/iːt/", "v:먹다"],
+            ["egg", "/eɡ/", "n:달걀"], ["eight", "/eɪt/", "num:8, 여덟"], ["eighteen", "/ˌeɪˈtiːn/", "num:18, 열여덟"], ["eighty", "/ˈeɪ.ti/", "num:80, 여든"], ["elephant", "/ˈel.ɪ.fənt/", "n:코끼리"],
+            ["eleven", "/ɪˈlev.ən/", "num:11, 열하나"], ["else", "/els/", "adv:그 밖의"], ["email", "/ˈiː.meɪl/", "n:이메일"], ["end", "/end/", "n:끝", "v:끝나다"], ["enjoy", "/ɪnˈdʒɔɪ/", "v:즐기다"],
+            ["enough", "/ɪˈnʌf/", "adj:충분한"], ["enter", "/ˈen.tər/", "v:들어가다"], ["especially", "/ɪˈspeʃ.əl.i/", "adv:특히"], ["europe", "/ˈjʊə.rəp/", "n:유럽"], ["euro", "/ˈjʊə.rəʊ/", "n:유로"],
+            ["evening", "/ˈiːv.nɪŋ/", "n:저녁"], ["event", "/ɪˈvent/", "n:사건, 행사"], ["ever", "/ˈev.ər/", "adv:언제든, 한번이라도"], ["every", "/ˈev.ri/", "det:모든"], ["everybody", "/ˈev.ri.bɒd.i/", "pron:모든 사람"],
+            ["everyone", "/ˈev.ri.wʌn/", "pron:모든 사람"], ["everything", "/ˈev.ri.θɪŋ/", "pron:모든 것"], ["exam", "/ɪɡˈzæm/", "n:시험"], ["example", "/ɪɡˈzɑːm.pəl/", "n:예시"], ["excited", "/ɪkˈsaɪ.tɪd/", "adj:신이 난"],
+            ["exciting", "/ɪkˈsaɪ.tɪŋ/", "adj:신나는"], ["exercise", "/ˈek.sə.saɪz/", "n:운동", "v:운동하다"], ["expensive", "/ɪkˈspen.sɪv/", "adj:비싼"], ["explain", "/ɪkˈspleɪn/", "v:설명하다"], ["eye", "/aɪ/", "n:눈"],
+            ["face", "/feɪs/", "n:얼굴"], ["fact", "/fækt/", "n:사실"], ["factory", "/ˈfæk.tər.i/", "n:공장"], ["fail", "/feɪl/", "v:실패하다"], ["fall", "/fɔːl/", "v:떨어지다", "n:가을"],
+            ["family", "/ˈfæm.əl.i/", "n:가족"], ["famous", "/ˈfeɪ.məs/", "adj:유명한"], ["fan", "/fæn/", "n:팬, 선풍기"], ["fantastic", "/fænˈtæs.tɪk/", "adj:환상적인"], ["far", "/fɑːr/", "adj:먼"],
+            ["farm", "/fɑːm/", "n:농장"], ["farmer", "/ˈfɑː.mər/", "n:농부"], ["fast", "/fɑːst/", "adj:빠른", "adv:빨리"], ["fat", "/fæt/", "adj:뚱뚱한"], ["father", "/ˈfɑː.ðər/", "n:아버지"],
+            ["favourite", "/ˈfeɪ.vər.ɪt/", "adj:가장 좋아하는"], ["february", "/ˈfeb.ru.ər.i/", "n:2월"], ["feel", "/fiːl/", "v:느끼다"], ["festival", "/ˈfes.tɪ.vəl/", "n:축제"], ["few", "/fjuː/", "adj:소수의"],
+            ["fifteen", "/ˌfɪfˈtiːn/", "num:15, 열다섯"], ["fifty", "/ˈfɪf.ti/", "num:50, 쉰"], ["fill", "/fɪl/", "v:채우다"], ["film", "/fɪlm/", "n:영화"], ["final", "/ˈfaɪ.nəl/", "adj:마지막의"],
+            ["find", "/faɪnd/", "v:찾다"], ["fine", "/faɪn/", "adj:좋은"], ["finish", "/ˈfɪn.ɪʃ/", "v:끝내다"], ["fire", "/faɪər/", "n:불"], ["first", "/fɜːst/", "adj:첫 번째의", "adv:먼저"],
+            ["fish", "/fɪʃ/", "n:물고기", "v:낚시하다"], ["five", "/faɪv/", "num:5, 다섯"], ["flat", "/flæt/", "n:아파트 (영국)", "adj:평평한"], ["flight", "/flaɪt/", "n:비행"], ["floor", "/flɔːr/", "n:바닥, 층"],
+            ["flower", "/ˈflaʊ.ər/", "n:꽃"], ["fly", "/flaɪ/", "v:날다", "n:파리"], ["follow", "/ˈfɒl.əʊ/", "v:따라가다"], ["food", "/fuːd/", "n:음식"], ["foot", "/fʊt/", "n:발"],
+            ["football", "/ˈfʊt.bɔːl/", "n:축구"], ["for", "/fɔːr/", "prep:~을 위하여"], ["foreign", "/ˈfɒr.ən/", "adj:외국의"], ["forest", "/ˈfɒr.ɪst/", "n:숲"], ["forget", "/fəˈɡet/", "v:잊다"],
+            ["fork", "/fɔːk/", "n:포크"], ["forty", "/ˈfɔː.ti/", "num:40, 마흔"], ["four", "/fɔːr/", "num:4, 넷"], ["fourteen", "/ˌfɔːˈtiːn/", "num:14, 열넷"], ["free", "/friː/", "adj:자유로운, 무료의"],
+            ["friday", "/ˈfraɪ.deɪ/", "n:금요일"], ["friend", "/frend/", "n:친구"], ["friendly", "/ˈfrend.li/", "adj:친절한"], ["from", "/frɒm/", "prep:~로부터"], ["front", "/frʌnt/", "n:앞"],
+            ["fruit", "/fruːt/", "n:과일"], ["full", "/fʊl/", "adj:가득 찬"], ["fun", "/fʌn/", "n:재미", "adj:재미있는"], ["funny", "/ˈfʌn.i/", "adj:웃기는"], ["future", "/ˈfjuː.tʃər/", "n:미래"],
+            ["game", "/ɡeɪm/", "n:게임"], ["garden", "/ˈɡɑː.dən/", "n:정원"], ["geography", "/dʒiˈɒɡ.rə.fi/", "n:지리학"], ["get", "/ɡet/", "v:얻다, 되다"], ["girl", "/ɡɜːrl/", "n:소녀"],
+            ["girlfriend", "/ˈɡɜːl.frend/", "n:여자친구"], ["give", "/ɡɪv/", "v:주다"], ["glass", "/ɡlɑːs/", "n:유리, 잔"], ["glasses", "/ˈɡlɑː.sɪz/", "n:안경"], ["go", "/ɡəʊ/", "v:가다"],
+            ["good", "/ɡʊd/", "adj:좋은"], ["goodbye", "/ɡʊdˈbaɪ/", "int:안녕 (작별)"], ["grandfather", "/ˈɡræn.fɑː.ðər/", "n:할아버지"], ["grandmother", "/ˈɡræn.mʌð.ər/", "n:할머니"], ["grass", "/ɡrɑːs/", "n:잔디"],
+            ["great", "/ɡreɪt/", "adj:위대한, 아주 좋은"], ["green", "/ɡriːn/", "adj:녹색의", "n:녹색"], ["grey", "/ɡreɪ/", "adj:회색의", "n:회색"], ["group", "/ɡruːp/", "n:그룹"], ["grow", "/ɡrəʊ/", "v:자라다, 재배하다"],
+            ["guess", "/ɡes/", "v:추측하다"], ["guitar", "/ɡɪˈtɑːr/", "n:기타"], ["gym", "/dʒɪm/", "n:체육관"], ["hair", "/heər/", "n:머리카락"], ["half", "/hɑːf/", "n:절반"],
+            ["hand", "/hænd/", "n:손"], ["happen", "/ˈhæp.ən/", "v:일어난다"], ["happy", "/ˈhæp.i/", "adj:행복한"], ["hard", "/hɑːd/", "adj:단단한, 어려운", "adv:열심히"], ["hat", "/hæt/", "n:모자"],
+            ["hate", "/heɪt/", "v:미워하다"], ["have", "/hæv/", "v:가지다"], ["he", "/hiː/", "pron:그는"], ["head", "/hed/", "n:머리"], ["health", "/helθ/", "n:건강"],
+            ["healthy", "/ˈhel.θi/", "adj:건강한"], ["hear", "/hɪər/", "v:듣다"], ["heart", "/hɑːt/", "n:심장, 마음"], ["heating", "/ˈhiː.tɪŋ/", "n:난방"], ["heavy", "/ˈhev.i/", "adj:무거운"],
+            ["hello", "/həˈləʊ/", "int:안녕"], ["help", "/help/", "v:돕다", "n:도움"], ["her", "/hɜːr/", "det:그녀의", "pron:그녀를"], ["here", "/hɪər/", "adv:여기에"], ["hero", "/ˈhɪə.rəʊ/", "n:영웅"],
+            ["hers", "/hɜːz/", "pron:그녀의 것"], ["hi", "/haɪ/", "int:안녕"], ["high", "/haɪ/", "adj:높은"], ["him", "/hɪm/", "pron:그를"], ["his", "/hɪz/", "det:그의"],
+            ["history", "/ˈhɪs.tər.i/", "n:역사"], ["hit", "/hɪt/", "v:치다"], ["hobby", "/ˈhɒb.i/", "n:취미"], ["holiday", "/ˈhɒl.ə.deɪ/", "n:휴일"], ["home", "/həʊm/", "n:집", "adv:집으로"],
+            ["homework", "/ˈhəʊm.wɜːk/", "n:숙제"], ["hope", "/həʊp/", "v:희망하다"], ["horse", "/hɔːs/", "n:말"], ["hospital", "/ˈhɒs.pɪ.təl/", "n:병원"], ["hot", "/hɒt/", "adj:더운, 뜨거운"],
+            ["hotel", "/həʊˈtel/", "n:호텔"], ["hour", "/aʊər/", "n:시간"], ["house", "/haʊs/", "n:집"], ["how", "/haʊ/", "adv:어떻게"], ["however", "/haʊˈev.ər/", "adv:하지만"],
+            ["hundred", "/ˈhʌn.drəd/", "num:100, 백"], ["hungry", "/ˈhʌŋ.ɡri/", "adj:배고픈"], ["husband", "/ˈhʌz.bənd/", "n:남편"], ["i", "/aɪ/", "pron:나는"], ["ice", "/aɪs/", "n:얼음"],
+            ["idea", "/aɪˈdɪə/", "n:아이디어"], ["if", "/ɪf/", "conj:만약"], ["imagine", "/ɪˈmædʒ.ɪn/", "v:상상하다"], ["important", "/ɪmˈpɔː.tənt/", "adj:중요한"], ["improve", "/ɪmˈpruːv/", "v:개선하다"],
+            ["in", "/ɪn/", "prep:~안에"], ["include", "/ɪnˈkluːd/", "v:포함하다"], ["information", "/ˌɪn.fəˈmeɪ.ʃən/", "n:정보"], ["interest", "/ˈɪn.trəst/", "n:흥미"], ["interested", "/ˈɪn.trəs.tɪd/", "adj:흥미 있어 하는"],
+            ["interesting", "/ˈɪn.trəs.tɪŋ/", "adj:흥미로운"], ["internet", "/ˈɪn.tə.net/", "n:인터넷"], ["interview", "/ˈɪn.tə.vjuː/", "n:인터뷰"], ["into", "/ˈɪn.tuː/", "prep:~안으로"], ["introduce", "/ˌɪn.trəˈdjuːs/", "v:소개하다"],
+            ["island", "/ˈaɪ.lənd/", "n:섬"], ["it", "/ɪt/", "pron:그것"], ["its", "/ɪts/", "det:그것의"], ["jacket", "/ˈdʒæk.ɪt/", "n:재킷"], ["january", "/ˈdʒæn.ju.ə.ri/", "n:1월"],
+            ["jeans", "/dʒiːnz/", "n:청바지"], ["job", "/dʒɒb/", "n:직업"], ["join", "/dʒɔɪn/", "v:참여하다"], ["journey", "/ˈdʒɜː.ni/", "n:여행, 여정"], ["juice", "/dʒuːs/", "n:주스"],
+            ["july", "/dʒuˈlaɪ/", "n:7월"], ["jump", "/dʒʌmp/", "v:점프하다"], ["june", "/dʒuːn/", "n:6월"], ["just", "/dʒʌst/", "adv:그저, 방금"], ["keep", "/kiːp/", "v:유지하다"],
+            ["key", "/kiː/", "n:열쇠"], ["kill", "/kɪl/", "v:죽이다"], ["kilometer", "/kɪˈlɒm.ɪ.tər/", "n:킬로미터"], ["kind", "/kaɪnd/", "adj:친절한", "n:종류"], ["kitchen", "/ˈkɪtʃ.ən/", "n:부엌"],
+            ["knee", "/niː/", "n:무릎"], ["knife", "/naɪf/", "n:칼"], ["know", "/nəʊ/", "v:알다"], ["lake", "/leɪk/", "n:호수"], ["lamp", "/læmp/", "n:램프"],
+            ["land", "/lænd/", "n:땅", "v:착륙하다"], ["language", "/ˈlæŋ.ɡwɪdʒ/", "n:언어"], ["large", "/lɑːdʒ/", "adj:큰"], ["last", "/lɑːst/", "adj:지난, 마지막의"], ["late", "/leɪt/", "adj:늦은"],
+            ["later", "/ˈleɪ.tər/", "adv:나중에"], ["laugh", "/lɑːf/", "v:웃다"], ["learn", "/lɜːn/", "v:배우다"], ["leave", "/liːv/", "v:떠나다"], ["left", "/left/", "adj:왼쪽의", "n:왼쪽"],
+            ["leg", "/leɡ/", "n:다리"], ["lesson", "/ˈles.ən/", "n:수업, 교훈"], ["let", "/let/", "v:~하게 하다"], ["letter", "/ˈlet.ər/", "n:편지, 글자"], ["library", "/ˈlaɪ.brər.i/", "n:도서관"],
+            ["lie", "/laɪ/", "v:눕다, 거짓말하다"], ["life", "/laɪf/", "n:삶"], ["light", "/laɪt/", "n:빛", "adj:가벼운"], ["like", "/laɪk/", "v:좋아하다", "prep:~처럼"], ["line", "/laɪn/", "n:선, 줄"],
+            ["lion", "/ˈlaɪ.ən/", "n:사자"], ["list", "/lɪst/", "n:목록"], ["listen", "/ˈlɪs.ən/", "v:듣다"], ["little", "/ˈlɪt.əl/", "adj:작은"], ["live", "/lɪv/", "v:살다"],
+            ["local", "/ˈləʊ.kəl/", "adj:지역의"], ["long", "/lɒŋ/", "adj:긴"], ["look", "/lʊk/", "v:보다"], ["lose", "/luːz/", "v:잃다"], ["lot", "/lɒt/", "n:많음"],
+            ["love", "/lʌv/", "n:사랑", "v:사랑하다"], ["lunch", "/lʌntʃ/", "n:점심"], ["machine", "/məˈʃiːn/", "n:기계"], ["magazine", "/ˌmæɡ.əˈziːn/", "n:잡지"], ["main", "/meɪn/", "adj:주요한"],
+            ["make", "/meɪk/", "v:만들다"], ["man", "/mæn/", "n:남자"], ["many", "/ˈmen.i/", "adj:많은"], ["map", "/mæp/", "n:지도"], ["march", "/mɑːtʃ/", "n:3월"],
+            ["market", "/ˈmɑː.kɪt/", "n:시장"], ["married", "/ˈmær.id/", "adj:결혼한"], ["match", "/mætʃ/", "n:경기", "v:어울리다"], ["may", "/meɪ/", "v:~일지도 모른다", "n:5월"], ["maybe", "/ˈmeɪ.bi/", "adv:아마도"],
+            ["me", "/miː/", "pron:나를"], ["meal", "/miːl/", "n:식사"], ["mean", "/miːn/", "v:의미하다"], ["meaning", "/ˈmiː.nɪŋ/", "n:의미"], ["meat", "/miːt/", "n:고기"],
+            ["meet", "/miːt/", "v:만나다"], ["meeting", "/ˈmiː.tɪŋ/", "n:회의"], ["member", "/ˈmem.bər/", "n:회원"], ["menu", "/ˈmen.juː/", "n:메뉴"], ["message", "/ˈmes.ɪdʒ/", "n:메시지"],
+            ["meter", "/ˈmiː.tər/", "n:미터"], ["midnight", "/ˈmɪd.naɪt/", "n:자정"], ["mile", "/maɪl/", "n:마일"], ["milk", "/mɪlk/", "n:우유"], ["million", "/ˈmɪl.jən/", "num:100만"],
+            ["minute", "/ˈmɪn.ɪt/", "n:분"], ["miss", "/mɪs/", "v:놓치다, 그리워하다"], ["mistake", "/mɪˈsteɪk/", "n:실수"], ["model", "/ˈmɒd.əl/", "n:모델"], ["modern", "/ˈmɒd.ən/", "adj:현대의"],
+            ["mom", "/mɒm/", "n:엄마"], ["moment", "/ˈməʊ.mənt/", "n:순간"], ["money", "/ˈmʌn.i/", "n:돈"], ["month", "/mʌnθ/", "n:달, 월"], ["moon", "/muːn/", "n:달"],
+            ["more", "/mɔːr/", "adv:더"], ["morning", "/ˈmɔː.nɪŋ/", "n:아침"], ["most", "/məʊst/", "adv:가장"], ["mother", "/ˈmʌð.ər/", "n:어머니"], ["mountain", "/ˈmaʊn.tɪn/", "n:산"],
+            ["mouse", "/maʊs/", "n:쥐"], ["mouth", "/maʊθ/", "n:입"], ["move", "/muːv/", "v:움직이다, 이사하다"], ["movie", "/ˈmuː.vi/", "n:영화"], ["much", "/mʌtʃ/", "adj:많은"],
+            ["museum", "/mjuːˈziː.əm/", "n:박물관"], ["music", "/ˈmjuː.zɪk/", "n:음악"], ["must", "/mʌst/", "v:~해야 한다"], ["my", "/maɪ/", "det:나의"], ["name", "/neɪm/", "n:이름"],
+            ["national", "/ˈnæʃ.ən.əl/", "adj:국가의"], ["natural", "/ˈnætʃ.ər.əl/", "adj:자연의"], ["nature", "/ˈneɪ.tʃər/", "n:자연"], ["near", "/nɪər/", "prep:~가까이"], ["nearly", "/ˈnɪə.li/", "adv:거의"],
+            ["need", "/niːd/", "v:필요하다"], ["negative", "/ˈneɡ.ə.tɪv/", "adj:부정적인"], ["neighbor", "/ˈneɪ.bər/", "n:이웃"], ["never", "/ˈnev.ər/", "adv:결코 ~않다"], ["new", "/njuː/", "adj:새로운"],
+            ["news", "/njuːz/", "n:뉴스"], ["newspaper", "/ˈnjuːzˌpeɪ.pər/", "n:신문"], ["next", "/nekst/", "adj:다음의"], ["nice", "/naɪs/", "adj:멋진"], ["night", "/naɪt/", "n:밤"],
+            ["nine", "/naɪn/", "num:9, 아홉"], ["nineteen", "/ˌnaɪnˈtiːn/", "num:19, 열아홉"], ["ninety", "/ˈnaɪn.ti/", "num:90, 아흔"], ["no", "/nəʊ/", "int:아니오"], ["nobody", "/ˈnəʊ.bəd.i/", "pron:아무도 ~않다"],
+            ["noise", "/nɔɪz/", "n:소음"], ["noisy", "/ˈnɔɪ.zi/", "adj:시끄러운"], ["noon", "/nuːn/", "n:정오"], ["no one", "/ˌnəʊ ˈwʌn/", "pron:아무도 ~않다"], ["normal", "/ˈnɔː.məl/", "adj:보통의"],
+            ["north", "/nɔːθ/", "n:북쪽"], ["nose", "/nəʊz/", "n:코"], ["not", "/nɒt/", "adv:아니다"], ["note", "/nəʊt/", "n:메모, 쪽지"], ["nothing", "/ˈnʌθ.ɪŋ/", "pron:아무것도 아님"],
+            ["november", "/nəʊˈvem.bər/", "n:11월"], ["now", "/naʊ/", "adv:지금"], ["number", "/ˈnʌm.bər/", "n:숫자"], ["nurse", "/nɜːs/", "n:간호사"], ["object", "/ˈɒb.dʒɪkt/", "n:물건"],
+            ["o'clock", "/əˈklɒk/", "adv:~시"], ["october", "/ɒkˈtəʊ.bər/", "n:10월"], ["of", "/ɒv/", "prep:~의"], ["off", "/ɒf/", "adv:떨어져, 꺼진"], ["office", "/ˈɒf.ɪs/", "n:사무실"],
+            ["often", "/ˈɒf.ən/", "adv:종종"], ["oh", "/əʊ/", "int:오"], ["ok", "/ˌəʊˈkeɪ/", "int:좋아"], ["old", "/əʊld/", "adj:늙은, 오래된"], ["on", "/ɒn/", "prep:~위에"],
+            ["once", "/wʌns/", "adv:한 번"], ["one", "/wʌn/", "num:1, 하나"], ["onion", "/ˈʌn.jən/", "n:양파"], ["online", "/ˈɒn.laɪn/", "adj:온라인의"], ["only", "/ˈəʊn.li/", "adv:오직"],
+            ["open", "/ˈəʊ.pən/", "v:열다", "adj:열린"], ["opinion", "/əˈpɪn.jən/", "n:의견"], ["opposite", "/ˈɒp.ə.zɪt/", "adj:반대의"], ["or", "/ɔːr/", "conj:또는"], ["orange", "/ˈɒr.ɪndʒ/", "n:오렌지", "n:주황색"],
+            ["order", "/ˈɔː.dər/", "n:주문", "v:주문하다"], ["other", "/ˈʌð.ər/", "adj:다른"], ["our", "/aʊər/", "det:우리의"], ["out", "/aʊt/", "adv:밖에"], ["outside", "/ˌaʊtˈsaɪd/", "adv:밖에서"],
+            ["over", "/ˈəʊ.vər/", "prep:~너머"], ["own", "/əʊn/", "adj:자신의"], ["page", "/peɪdʒ/", "n:페이지"], ["paint", "/peɪnt/", "v:페인트칠하다, 그리다"], ["painting", "/ˈpeɪn.tɪŋ/", "n:그림"],
+            ["pair", "/peər/", "n:한 쌍"], ["paper", "/ˈpeɪ.pər/", "n:종이"], ["paragraph", "/ˈpær.ə.ɡrɑːf/", "n:단락"], ["parent", "/ˈpeə.rənt/", "n:부모"], ["park", "/pɑːk/", "n:공원", "v:주차하다"],
+            ["part", "/pɑːt/", "n:부분"], ["partner", "/ˈpɑːt.nər/", "n:파트너"], ["party", "/ˈpɑː.ti/", "n:파티"], ["passport", "/ˈpɑːs.pɔːt/", "n:여권"], ["past", "/pɑːst/", "n:과거"],
+            ["pay", "/peɪ/", "v:지불하다"], ["pen", "/pen/", "n:펜"], ["pencil", "/ˈpen.səl/", "n:연필"], ["people", "/ˈpiː.pəl/", "n:사람들"], ["pepper", "/ˈpep.ər/", "n:후추, 고추"],
+            ["perfect", "/ˈpɜː.fekt/", "adj:완벽한"], ["period", "/ˈpɪə.ri.əd/", "n:기간, 마침표"], ["person", "/ˈpɜː.sən/", "n:사람"], ["personal", "/ˈpɜː.sən.əl/", "adj:개인의"], ["pet", "/pet/", "n:애완동물"],
+            ["phone", "/fəʊn/", "n:전화기"], ["photo", "/ˈfəʊ.təʊ/", "n:사진"], ["photograph", "/ˈfəʊ.tə.ɡrɑːf/", "n:사진"], ["phrase", "/freɪz/", "n:구절"], ["piano", "/piˈæn.əʊ/", "n:피아노"],
+            ["picture", "/ˈpɪk.tʃər/", "n:그림, 사진"], ["piece", "/piːs/", "n:조각"], ["pig", "/pɪɡ/", "n:돼지"], ["pink", "/pɪŋk/", "adj:분홍색의", "n:분홍색"], ["place", "/pleɪs/", "n:장소"],
+            ["plan", "/plæn/", "n:계획", "v:계획하다"], ["plant", "/plɑːnt/", "n:식물"], ["plastic", "/ˈplæs.tɪk/", "n:플라스틱"], ["plate", "/pleɪt/", "n:접시"], ["play", "/pleɪ/", "v:놀다, 경기하다"],
+            ["player", "/ˈpleɪ.ər/", "n:선수"], ["please", "/pliːz/", "int:제발"], ["point", "/pɔɪnt/", "n:점, 요점", "v:가리키다"], ["police", "/pəˈliːs/", "n:경찰"], ["pool", "/puːl/", "n:수영장"],
+            ["poor", "/pɔːr/", "adj:가난한"], ["popular", "/ˈpɒp.jə.lər/", "adj:인기 있는"], ["positive", "/ˈpɒz.ə.tɪv/", "adj:긍정적인"], ["possible", "/ˈpɒs.ə.bəl/", "adj:가능한"], ["post", "/pəʊst/", "n:우편"],
+            ["potato", "/pəˈteɪ.təʊ/", "n:감자"], ["pound", "/paʊnd/", "n:파운드"], ["practice", "/ˈpræk.tɪs/", "n:연습", "v:연습하다"], ["prefer", "/prɪˈfɜːr/", "v:선호하다"], ["prepare", "/prɪˈpeər/", "v:준비하다"],
+            ["present", "/ˈprez.ənt/", "n:선물, 현재"], ["pretty", "/ˈprɪt.i/", "adj:예쁜"], ["price", "/praɪs/", "n:가격"], ["probably", "/ˈprɒb.ə.bli/", "adv:아마도"], ["problem", "/ˈprɒb.ləm/", "n:문제"],
+            // Q - Z (New Data)
+            ["quarter", "/ˈkwɔː.tər/", "n:4분의 1, 15분"], ["question", "/ˈkwes.tʃən/", "n:질문", "v:질문하다"], ["quick", "/kwɪk/", "adj:빠른"], ["quickly", "/ˈkwɪk.li/", "adv:빨리"], ["quiet", "/ˈkwaɪ.ət/", "adj:조용한"],
+            ["quite", "/kwaɪt/", "adv:꽤, 상당히"], ["radio", "/ˈreɪ.di.əʊ/", "n:라디오"], ["rain", "/reɪn/", "n:비", "v:비가 오다"], ["read", "/riːd/", "v:읽다"], ["reader", "/ˈriː.dər/", "n:독자"],
+            ["reading", "/ˈriː.dɪŋ/", "n:독서"], ["ready", "/ˈred.i/", "adj:준비된"], ["real", "/rɪəl/", "adj:진짜의"], ["really", "/ˈrɪə.li/", "adv:정말로"], ["reason", "/ˈriː.zən/", "n:이유"],
+            ["red", "/red/", "adj:빨간", "n:빨간색"], ["remember", "/rɪˈmem.bər/", "v:기억하다"], ["restaurant", "/ˈres.trɒnt/", "n:식당"], ["result", "/rɪˈzʌlt/", "n:결과"], ["return", "/rɪˈtɜːn/", "v:돌아오다"],
+            ["rice", "/raɪs/", "n:쌀, 밥"], ["rich", "/rɪtʃ/", "adj:부유한"], ["ride", "/raɪd/", "v:타다"], ["right", "/raɪt/", "adj:오른쪽의, 옳은"], ["river", "/ˈrɪv.ər/", "n:강"],
+            ["road", "/rəʊd/", "n:길"], ["room", "/ruːm/", "n:방"], ["routine", "/ruːˈtiːn/", "n:일과"], ["rule", "/ruːl/", "n:규칙"], ["run", "/rʌn/", "v:달리다"],
+            ["sad", "/sæd/", "adj:슬픈"], ["salad", "/ˈsæl.əd/", "n:샐러드"], ["salt", "/sɒlt/", "n:소금"], ["same", "/seɪm/", "adj:같은"], ["sandwich", "/ˈsæn.wɪdʒ/", "n:샌드위치"],
+            ["sauce", "/sɔːs/", "n:소스"], ["save", "/seɪv/", "v:구하다, 저축하다"], ["say", "/seɪ/", "v:말하다"], ["school", "/skuːl/", "n:학교"], ["science", "/ˈsaɪ.əns/", "n:과학"],
+            ["scientist", "/ˈsaɪən.tɪst/", "n:과학자"], ["sea", "/siː/", "n:바다"], ["second", "/ˈsek.ənd/", "adj:두 번째의", "n:초"], ["section", "/ˈsek.ʃən/", "n:구역"], ["see", "/siː/", "v:보다"],
+            ["sell", "/sel/", "v:팔다"], ["send", "/send/", "v:보내다"], ["sentence", "/ˈsen.təns/", "n:문장"], ["serve", "/sɜːv/", "v:제공하다, 봉사하다"], ["set", "/set/", "v:놓다, 설정하다"],
+            ["seven", "/ˈsev.ən/", "num:7, 일곱"], ["seventeen", "/ˌsev.ənˈtiːn/", "num:17, 열일곱"], ["seventy", "/ˈsev.ən.ti/", "num:70, 일흔"], ["share", "/ʃeər/", "v:공유하다"], ["she", "/ʃiː/", "pron:그녀는"],
+            ["sheep", "/ʃiːp/", "n:양"], ["shirt", "/ʃɜːt/", "n:셔츠"], ["shoe", "/ʃuː/", "n:신발"], ["shop", "/ʃɒp/", "n:가게", "v:쇼핑하다"], ["shopping", "/ˈʃɒp.ɪŋ/", "n:쇼핑"],
+            ["short", "/ʃɔːt/", "adj:짧은, 키가 작은"], ["should", "/ʃʊd/", "v:~해야 한다"], ["show", "/ʃəʊ/", "v:보여주다", "n:쇼"], ["shower", "/ʃaʊər/", "n:샤워"], ["sick", "/sɪk/", "adj:아픈"],
+            ["side", "/saɪd/", "n:쪽, 측면"], ["sign", "/saɪn/", "n:표지판", "v:서명하다"], ["silver", "/ˈsɪl.vər/", "n:은", "adj:은색의"], ["similar", "/ˈsɪm.ɪ.lər/", "adj:비슷한"], ["simple", "/ˈsɪm.pəl/", "adj:간단한"],
+            ["since", "/sɪns/", "prep:~이래로"], ["sing", "/sɪŋ/", "v:노래하다"], ["singer", "/ˈsɪŋ.ər/", "n:가수"], ["sister", "/ˈsɪs.tər/", "n:자매"], ["sit", "/sɪt/", "v:앉다"],
+            ["site", "/saɪt/", "n:현장, 사이트"], ["situation", "/ˌsɪtʃ.uˈeɪ.ʃən/", "n:상황"], ["six", "/sɪks/", "num:6, 여섯"], ["sixteen", "/ˌsɪkˈstiːn/", "num:16, 열여섯"], ["sixty", "/ˈsɪk.sti/", "num:60, 예순"],
+            ["skirt", "/skɜːt/", "n:치마"], ["sleep", "/sliːp/", "v:자다", "n:잠"], ["slice", "/slaɪs/", "n:조각"], ["slow", "/sləʊ/", "adj:느린"], ["slowly", "/ˈsləʊ.li/", "adv:천천히"],
+            ["small", "/smɔːl/", "adj:작은"], ["smoke", "/sməʊk/", "n:연기", "v:담배 피우다"], ["smoking", "/ˈsməʊ.kɪŋ/", "n:흡연"], ["snow", "/snəʊ/", "n:눈", "v:눈이 오다"], ["soap", "/səʊp/", "n:비누"],
+            ["soccer", "/ˈsɒk.ər/", "n:축구"], ["sock", "/sɒk/", "n:양말"], ["soft", "/sɒft/", "adj:부드러운"], ["some", "/sʌm/", "det:약간의"], ["somebody", "/ˈsʌm.bə.di/", "pron:누군가"],
+            ["someone", "/ˈsʌm.wʌn/", "pron:누군가"], ["something", "/ˈsʌm.θɪŋ/", "pron:무언가"], ["sometimes", "/ˈsʌm.taɪmz/", "adv:가끔"], ["son", "/sʌn/", "n:아들"], ["song", "/sɒŋ/", "n:노래"],
+            ["soon", "/suːn/", "adv:곧"], ["sorry", "/ˈsɒr.i/", "adj:미안한"], ["sound", "/saʊnd/", "n:소리"], ["soup", "/suːp/", "n:수프"], ["south", "/saʊθ/", "n:남쪽"],
+            ["space", "/speɪs/", "n:우주, 공간"], ["speak", "/spiːk/", "v:말하다"], ["special", "/ˈspeʃ.əl/", "adj:특별한"], ["spell", "/spel/", "v:철자를 쓰다"], ["spelling", "/ˈspel.ɪŋ/", "n:철자"],
+            ["spend", "/spend/", "v:쓰다, 보내다"], ["sport", "/spɔːt/", "n:스포츠"], ["spring", "/sprɪŋ/", "n:봄"], ["square", "/skweər/", "n:정사각형, 광장"], ["stadium", "/ˈsteɪ.di.əm/", "n:경기장"],
+            ["staff", "/stɑːf/", "n:직원"], ["stage", "/steɪdʒ/", "n:무대"], ["stand", "/stænd/", "v:서다"], ["star", "/stɑːr/", "n:별, 스타"], ["start", "/stɑːt/", "v:시작하다"],
+            ["station", "/ˈsteɪ.ʃən/", "n:역"], ["stay", "/steɪ/", "v:머무르다"], ["steak", "/steɪk/", "n:스테이크"], ["still", "/stɪl/", "adv:여전히"], ["stomach", "/ˈstʌm.ək/", "n:위, 배"],
+            ["stop", "/stɒp/", "v:멈추다"], ["store", "/stɔːr/", "n:가게"], ["storm", "/stɔːm/", "n:폭풍"], ["story", "/ˈstɔː.ri/", "n:이야기"], ["street", "/striːt/", "n:거리"],
+            ["student", "/ˈstjuː.dənt/", "n:학생"], ["study", "/ˈstʌd.i/", "v:공부하다", "n:공부"], ["style", "/staɪl/", "n:스타일"], ["subject", "/ˈsʌb.dʒekt/", "n:주제, 과목"], ["success", "/səkˈses/", "n:성공"],
+            ["sugar", "/ˈʃʊɡ.ər/", "n:설탕"], ["summer", "/ˈsʌm.ər/", "n:여름"], ["sun", "/sʌn/", "n:태양"], ["sunday", "/ˈsʌn.deɪ/", "n:일요일"], ["supermarket", "/ˈsuː.pəˌmɑː.kɪt/", "n:슈퍼마켓"],
+            ["sure", "/ʃɔːr/", "adj:확실한"], ["sweater", "/ˈswet.ər/", "n:스웨터"], ["swim", "/swɪm/", "v:수영하다"], ["swimming", "/ˈswɪm.ɪŋ/", "n:수영"], ["swimming pool", "/ˈswɪm.ɪŋ ˌpuːl/", "n:수영장"],
+            ["table", "/ˈteɪ.bəl/", "n:탁자"], ["take", "/teɪk/", "v:가져가다, (시간이) 걸리다"], ["talk", "/tɔːk/", "v:이야기하다"], ["tall", "/tɔːl/", "adj:키가 큰"], ["taxi", "/ˈtæk.si/", "n:택시"],
+            ["tea", "/tiː/", "n:차"], ["teach", "/tiːtʃ/", "v:가르치다"], ["teacher", "/ˈtiː.tʃər/", "n:선생님"], ["team", "/tiːm/", "n:팀"], ["teenager", "/ˈtiːnˌeɪ.dʒər/", "n:십대"],
+            ["telephone", "/ˈtel.ɪ.fəʊn/", "n:전화"], ["television", "/ˈtel.ɪ.vɪʒ.ən/", "n:텔레비전"], ["tell", "/tel/", "v:말하다"], ["temperature", "/ˈtem.prə.tʃər/", "n:온도"], ["tennis", "/ˈten.ɪs/", "n:테니스"],
+            ["tent", "/tent/", "n:텐트"], ["term", "/tɜːm/", "n:학기, 용어"], ["terrible", "/ˈter.ə.bəl/", "adj:끔찍한"], ["test", "/test/", "n:시험"], ["text", "/tekst/", "n:문자, 본문"],
+            ["than", "/ðæn/", "conj:~보다"], ["thank", "/θæŋk/", "v:감사하다"], ["thanks", "/θæŋks/", "int:고마워"], ["that", "/ðæt/", "det:저것"], ["the", "/ðə/", "det:그"],
+            ["theater", "/ˈθɪə.tər/", "n:극장"], ["their", "/ðeər/", "det:그들의"], ["them", "/ðem/", "pron:그들을"], ["then", "/ðen/", "adv:그때, 그리고 나서"], ["there", "/ðeər/", "adv:거기에"],
+            ["they", "/ðeɪ/", "pron:그들은"], ["thing", "/θɪŋ/", "n:것, 물건"], ["think", "/θɪŋk/", "v:생각하다"], ["thirsty", "/ˈθɜː.sti/", "adj:목마른"], ["thirteen", "/θɜːˈtiːn/", "num:13, 열셋"],
+            ["thirty", "/ˈθɜː.ti/", "num:30, 서른"], ["this", "/ðɪs/", "det:이것"], ["those", "/ðəʊz/", "det:저것들"], ["three", "/θriː/", "num:3, 셋"], ["through", "/θruː/", "prep:~을 통하여"],
+            ["thursday", "/ˈθɜːz.deɪ/", "n:목요일"], ["ticket", "/ˈtɪk.ɪt/", "n:티켓"], ["tidy", "/ˈtaɪ.di/", "adj:단정한", "v:정리하다"], ["tiger", "/ˈtaɪ.ɡər/", "n:호랑이"], ["time", "/taɪm/", "n:시간"],
+            ["timetable", "/ˈtaɪmˌteɪ.bəl/", "n:시간표"], ["to", "/tuː/", "prep:~로, ~에게"], ["today", "/təˈdeɪ/", "n:오늘"], ["together", "/təˈɡeð.ər/", "adv:함께"], ["toilet", "/ˈtɔɪ.lət/", "n:화장실"],
+            ["tomato", "/təˈmɑː.təʊ/", "n:토마토"], ["tomorrow", "/təˈmɒr.əʊ/", "n:내일"], ["tonight", "/təˈnaɪt/", "n:오늘 밤"], ["too", "/tuː/", "adv:너무, 또한"], ["tooth", "/tuːθ/", "n:이 (치아)"],
+            ["top", "/tɒp/", "n:맨 위"], ["topic", "/ˈtɒp.ɪk/", "n:주제"], ["tourist", "/ˈtʊə.rɪst/", "n:관광객"], ["town", "/taʊn/", "n:마을"], ["traffic", "/ˈtræf.ɪk/", "n:교통"],
+            ["train", "/treɪn/", "n:기차"], ["travel", "/ˈtræv.əl/", "v:여행하다"], ["tree", "/triː/", "n:나무"], ["trip", "/trɪp/", "n:여행"], ["trousers", "/ˈtraʊ.zəz/", "n:바지"],
+            ["true", "/truː/", "adj:사실인"], ["try", "/traɪ/", "v:시도하다, 노력하다"], ["t-shirt", "/ˈtiː.ʃɜːt/", "n:티셔츠"], ["tuesday", "/ˈtjuːz.deɪ/", "n:화요일"], ["turn", "/tɜːn/", "v:돌다"],
+            ["tv", "/ˌtiːˈviː/", "n:TV"], ["twelve", "/twelv/", "num:12, 열둘"], ["twenty", "/ˈtwen.ti/", "num:20, 스물"], ["twice", "/twaɪs/", "adv:두 번"], ["two", "/tuː/", "num:2, 둘"],
+            ["type", "/taɪp/", "n:유형", "v:타이핑하다"], ["umbrella", "/ʌmˈbrel.ə/", "n:우산"], ["uncle", "/ˈʌŋ.kəl/", "n:삼촌, 외삼촌"], ["under", "/ˈʌn.dər/", "prep:~아래에"], ["understand", "/ˌʌn.dəˈstænd/", "v:이해하다"],
+            ["university", "/ˌjuː.nɪˈvɜː.sə.ti/", "n:대학교"], ["until", "/ənˈtɪl/", "prep:~까지"], ["up", "/ʌp/", "adv:위로"], ["upstairs", "/ʌpˈsteəz/", "adv:위층으로"], ["us", "/ʌs/", "pron:우리를"],
+            ["use", "/juːz/", "v:사용하다"], ["useful", "/ˈjuːs.fəl/", "adj:유용한"], ["usual", "/ˈjuː.ʒu.əl/", "adj:평소의"], ["usually", "/ˈjuː.ʒu.ə.li/", "adv:보통"], ["vacation", "/veɪˈkeɪ.ʃən/", "n:방학, 휴가"],
+            ["vegetable", "/ˈvedʒ.tə.bəl/", "n:채소"], ["very", "/ˈver.i/", "adv:매우"], ["video", "/ˈvɪd.i.əʊ/", "n:비디오"], ["village", "/ˈvɪl.ɪdʒ/", "n:마을"], ["visit", "/ˈvɪz.ɪt/", "v:방문하다"],
+            ["visitor", "/ˈvɪz.ɪ.tər/", "n:방문객"], ["voice", "/vɔɪs/", "n:목소리"], ["wait", "/weɪt/", "v:기다리다"], ["waiter", "/ˈweɪ.tər/", "n:웨이터"], ["wake", "/weɪk/", "v:깨다"],
+            ["walk", "/wɔːk/", "v:걷다", "n:산책"], ["wall", "/wɔːl/", "n:벽"], ["want", "/wɒnt/", "v:원하다"], ["warm", "/wɔːm/", "adj:따뜻한"], ["wash", "/wɒʃ/", "v:씻다"],
+            ["watch", "/wɒtʃ/", "v:보다", "n:시계"], ["water", "/ˈwɔː.tər/", "n:물"], ["way", "/weɪ/", "n:길, 방법"], ["we", "/wiː/", "pron:우리는"], ["wear", "/weər/", "v:입다"],
+            ["weather", "/ˈweð.ər/", "n:날씨"], ["website", "/ˈweb.saɪt/", "n:웹사이트"], ["wednesday", "/ˈwenz.deɪ/", "n:수요일"], ["week", "/wiːk/", "n:주"], ["weekend", "/ˌwiːkˈend/", "n:주말"],
+            ["welcome", "/ˈwel.kəm/", "int:환영합니다"], ["well", "/wel/", "adv:잘", "adj:건강한"], ["west", "/west/", "n:서쪽"], ["what", "/wɒt/", "pron:무엇"], ["wheel", "/wiːl/", "n:바퀴"],
+            ["when", "/wen/", "adv:언제"], ["where", "/weər/", "adv:어디에"], ["which", "/wɪtʃ/", "det:어느"], ["white", "/waɪt/", "adj:흰", "n:흰색"], ["who", "/huː/", "pron:누구"],
+            ["why", "/waɪ/", "adv:왜"], ["wife", "/waɪf/", "n:아내"], ["will", "/wɪl/", "v:~할 것이다"], ["win", "/wɪn/", "v:이기다"], ["wind", "/wɪnd/", "n:바람"],
+            ["window", "/ˈwɪn.dəʊ/", "n:창문"], ["wine", "/waɪn/", "n:와인"], ["winter", "/ˈwɪn.tər/", "n:겨울"], ["with", "/wɪð/", "prep:~와 함께"], ["without", "/wɪˈðaʊt/", "prep:~없이"],
+            ["woman", "/ˈwʊm.ən/", "n:여자"], ["wonderful", "/ˈwʌn.də.fəl/", "adj:멋진"], ["word", "/wɜːd/", "n:단어"], ["work", "/wɜːk/", "v:일하다", "n:일"], ["worker", "/ˈwɜː.kər/", "n:노동자"],
+            ["world", "/wɜːld/", "n:세계"], ["worry", "/ˈwʌr.i/", "v:걱정하다"], ["write", "/raɪt/", "v:쓰다"], ["writer", "/ˈraɪ.tər/", "n:작가"], ["writing", "/ˈraɪ.tɪŋ/", "n:글쓰기"],
+            ["wrong", "/rɒŋ/", "adj:틀린"], ["year", "/jɪər/", "n:년, 해"], ["yellow", "/ˈjel.əʊ/", "adj:노란", "n:노란색"], ["yes", "/jes/", "int:네"], ["yesterday", "/ˈjes.tə.deɪ/", "n:어제"],
+            ["you", "/juː/", "pron:너, 당신"], ["young", "/jʌŋ/", "adj:젊은, 어린"], ["your", "/jɔːr/", "det:너의"], ["yourself", "/jɔːˈself/", "pron:너 자신"], ["zoo", "/zuː/", "n:동물원"]
+        ];
+
+        // --- State Management ---
+        let vocabData = [];
+        let currentIndex = 0;
+        let learnedWords = [];
+        let filteredIndices = [];
+        let isFilteredMode = false;
+        let searchTerm = "";
+
+        // --- Initialization ---
+        window.onload = function() {
+            // Parse compact data into object structure
+            parseVocabData();
+            
+            // Load state
+            learnedWords = JSON.parse(localStorage.getItem('a1_vocab_learned')) || [];
+            
+            // Initial Render
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('header-title').textContent = `A1 영단어장 (${vocabData.length})`;
+                document.getElementById('counter-text').textContent = `1 / ${vocabData.length}`;
+                updateFilteredIndices();
+                renderCard();
+                updateProgress();
+                renderList();
+            }, 800);
+        };
+
+        // --- Core Functions ---
+
+        function parseVocabData() {
+            vocabData = rawVocabData.map((item, index) => {
+                const meanings = item.slice(2).map(m => {
+                    const splitIndex = m.indexOf(':');
+                    const pos = m.substring(0, splitIndex);
+                    const k = m.substring(splitIndex + 1);
+                    return { pos, k };
+                });
+                return {
+                    id: index + 1,
+                    word: item[0],
+                    phonetic: item[1],
+                    meanings: meanings
+                };
+            });
+            document.getElementById('loading-count').textContent = `${vocabData.length}개 단어 준비 완료`;
+        }
+        
+        function updateFilteredIndices() {
+            if (isFilteredMode) {
+                // Filter only unlearned words
+                filteredIndices = vocabData
+                    .map((_, index) => index)
+                    .filter(index => !learnedWords.includes(vocabData[index].id));
+                
+                if (filteredIndices.length === 0 && vocabData.length > 0) {
+                   if(learnedWords.length === vocabData.length) {
+                       alert("축하합니다! 모든 단어를 암기하셨습니다. 전체 보기 모드로 전환합니다.");
+                       document.getElementById('hide-learned').checked = false;
+                       isFilteredMode = false;
+                       filteredIndices = vocabData.map((_, index) => index);
+                   }
+                }
+            } else {
+                // All words
+                filteredIndices = vocabData.map((_, index) => index);
+            }
+            
+            // Reset index if out of bounds
+            if (currentIndex >= filteredIndices.length) currentIndex = 0;
+        }
+
+        function getCurrentWordData() {
+            if (filteredIndices.length === 0) return null;
+            const realIndex = filteredIndices[currentIndex];
+            return vocabData[realIndex];
+        }
+
+        function renderCard() {
+            const card = document.getElementById('flashcard');
+            const data = getCurrentWordData();
+            
+            // Reset flip state
+            card.classList.remove('flipped');
+
+            if (!data) {
+                // Empty State
+                document.getElementById('card-word').textContent = "완료!";
+                document.getElementById('card-word-back').textContent = "End";
+                return;
+            }
+
+            // Front
+            document.getElementById('card-word').textContent = data.word;
+            
+            // Status Badge on Front
+            const statusBadge = document.getElementById('status-badge');
+            if (learnedWords.includes(data.id)) {
+                statusBadge.classList.remove('hidden');
+                statusBadge.classList.add('bg-green-100', 'text-green-700');
+                statusBadge.textContent = "암기 완료";
+            } else {
+                statusBadge.classList.add('hidden');
+                statusBadge.classList.remove('bg-green-100', 'text-green-700');
+            }
+
+            // Back
+            document.getElementById('card-word-back').textContent = data.word;
+            document.getElementById('card-phonetic').textContent = data.phonetic || "";
+            
+            const meaningsContainer = document.getElementById('meanings-container');
+            meaningsContainer.innerHTML = '';
+
+            data.meanings.forEach(m => {
+                const row = document.createElement('div');
+                row.className = "flex gap-3 border-b border-gray-100 pb-2 last:border-0";
+                
+                const posBadge = document.createElement('span');
+                posBadge.className = `px-2 py-1 rounded text-xs font-bold h-fit whitespace-nowrap ${getPosColor(m.pos)}`;
+                posBadge.textContent = getPosKorean(m.pos);
+                
+                const defText = document.createElement('p');
+                defText.className = "text-gray-700 text-sm leading-relaxed";
+                defText.textContent = m.k;
+
+                row.appendChild(posBadge);
+                row.appendChild(defText);
+                meaningsContainer.appendChild(row);
+            });
+
+            // Update Counter
+            document.getElementById('counter-text').textContent = `${currentIndex + 1} / ${filteredIndices.length}`;
+
+            // Update Button State
+            updateButtonState(data.id);
+        }
+
+        function updateButtonState(id) {
+            const btn = document.getElementById('btn-mark-learned');
+            const isLearned = learnedWords.includes(id);
+
+            if (isLearned) {
+                btn.className = "flex-1 py-3 bg-green-50 border border-green-200 text-green-600 rounded-lg shadow-sm font-bold hover:bg-green-100 active:scale-95 transition-all flex justify-center items-center gap-2";
+                btn.querySelector('span').textContent = "암기 취소";
+                btn.querySelector('path').setAttribute('d', "M6 18L18 6M6 6l12 12");
+            } else {
+                btn.className = "flex-1 py-3 bg-white border border-indigo-200 text-indigo-600 rounded-lg shadow-sm font-bold hover:bg-indigo-50 active:scale-95 transition-all flex justify-center items-center gap-2";
+                btn.querySelector('span').textContent = "암기 완료로 표시";
+                btn.querySelector('path').setAttribute('d', "M5 13l4 4L19 7");
+            }
+        }
+
+        // --- Helpers ---
+
+        function getPosColor(pos) {
+            switch(pos) {
+                case 'n': return 'bg-blue-100 text-blue-700';
+                case 'v': return 'bg-red-100 text-red-700';
+                case 'adj': return 'bg-yellow-100 text-yellow-700';
+                case 'adv': return 'bg-purple-100 text-purple-700';
+                default: return 'bg-gray-200 text-gray-700';
+            }
+        }
+
+        function getPosKorean(pos) {
+            switch(pos) {
+                case 'n': return '명사';
+                case 'v': return '동사';
+                case 'adj': return '형용사';
+                case 'adv': return '부사';
+                case 'num': return '수사';
+                case 'prep': return '전치사';
+                case 'int': return '감탄사';
+                case 'pron': return '대명사';
+                case 'det': return '한정사';
+                case 'conj': return '접속사';
+                default: return pos;
+            }
+        }
+
+        // --- Interactions ---
+
+        function flipCard() {
+            const card = document.getElementById('flashcard');
+            card.classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            if (filteredIndices.length === 0) return;
+            currentIndex = (currentIndex + 1) % filteredIndices.length;
+            renderCard();
+        }
+
+        function prevCard() {
+            if (filteredIndices.length === 0) return;
+            currentIndex = (currentIndex - 1 + filteredIndices.length) % filteredIndices.length;
+            renderCard();
+        }
+
+        function toggleLearned() {
+            const data = getCurrentWordData();
+            if (!data) return;
+
+            const id = data.id;
+            const index = learnedWords.indexOf(id);
+
+            if (index === -1) {
+                learnedWords.push(id);
+            } else {
+                learnedWords.splice(index, 1);
+            }
+
+            localStorage.setItem('a1_vocab_learned', JSON.stringify(learnedWords));
+            
+            updateButtonState(id);
+            updateProgress();
+            
+            if (isFilteredMode) {
+                 setTimeout(() => {
+                     updateFilteredIndices();
+                     renderCard();
+                 }, 500);
+            } else {
+                renderCard(); 
+            }
+            renderList(); // Update list view too
+        }
+
+        function toggleFilter() {
+            isFilteredMode = document.getElementById('hide-learned').checked;
+            currentIndex = 0;
+            updateFilteredIndices();
+            renderCard();
+        }
+
+        function playAudio() {
+            const data = getCurrentWordData();
+            if (!data) return;
+            
+            const utterance = new SpeechSynthesisUtterance(data.word);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function updateProgress() {
+            if (vocabData.length === 0) return;
+            const percentage = Math.round((learnedWords.length / vocabData.length) * 100);
+            document.getElementById('progress-text').textContent = `${percentage}%`;
+        }
+
+        // --- List View Logic ---
+        
+        function switchTab(tab) {
+            const btnStudy = document.getElementById('tab-study');
+            const btnList = document.getElementById('tab-list');
+            const viewStudy = document.getElementById('view-study');
+            const viewList = document.getElementById('view-list');
+
+            if (tab === 'study') {
+                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all";
+                btnList.className = "flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all";
+                viewStudy.classList.remove('hidden');
+                viewStudy.classList.add('flex');
+                
+                viewList.classList.add('hidden');
+                viewList.classList.remove('flex');
+                renderCard(); 
+            } else {
+                btnList.className = "flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all";
+                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all";
+                viewList.classList.remove('hidden');
+                viewList.classList.add('flex');
+                
+                viewStudy.classList.add('hidden');
+                viewStudy.classList.remove('flex');
+                renderList();
+            }
+        }
+
+        function filterList() {
+            searchTerm = document.getElementById('search-input').value.toLowerCase();
+            renderList();
+        }
+
+        function renderList() {
+            const container = document.getElementById('word-list-container');
+            container.innerHTML = '';
+
+            const filteredList = vocabData.filter(item => item.word.toLowerCase().includes(searchTerm));
+
+            if (filteredList.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            // Virtual scrolling optimization for list view (render limit to 100 for perf in big lists)
+            const displayList = filteredList.slice(0, 100); 
+
+            displayList.forEach(item => {
+                const isLearned = learnedWords.includes(item.id);
+                
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:border-indigo-300 transition-all cursor-pointer flex justify-between items-center group";
+                div.onclick = () => {
+                   // Go to study mode for this word
+                   isFilteredMode = false;
+                   document.getElementById('hide-learned').checked = false;
+                   updateFilteredIndices();
+                   currentIndex = filteredIndices.indexOf(vocabData.indexOf(item));
+                   switchTab('study');
+                };
+
+                const content = `
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-lg eng-font text-gray-800">${item.word}</span>
+                            <span class="text-xs text-gray-400 font-mono">${item.phonetic || ''}</span>
+                            ${isLearned ? '<span class="ml-auto text-[10px] text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded-full">완료</span>' : ''}
+                        </div>
+                        <div class="text-xs text-gray-500 flex flex-wrap gap-y-1">
+                            ${item.meanings.map(m => `<span class="mr-3 flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 mr-1.5"></span><span class="font-bold text-gray-400 mr-1">${m.pos}.</span> ${m.k}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="text-gray-300 group-hover:text-indigo-500 pl-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                `;
+                div.innerHTML = content;
+                container.appendChild(div);
+            });
+            
+            if (filteredList.length > 100) {
+                const moreDiv = document.createElement('div');
+                moreDiv.className = "text-center text-xs text-gray-400 py-2";
+                moreDiv.textContent = `...외 ${filteredList.length - 100}개 결과 (검색하여 확인하세요)`;
+                container.appendChild(moreDiv);
+            }
+        }
+
+        function resetAllData() {
+            if(confirm('모든 학습 기록을 초기화 하시겠습니까?')) {
+                learnedWords = [];
+                localStorage.removeItem('a1_vocab_learned');
+                updateProgress();
+                renderList();
+                updateFilteredIndices();
+                renderCard();
+            }
+        }
+
+    </script>
+</body>
+</html>
