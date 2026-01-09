@@ -2,18 +2,22 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A1 영단어 마스터 (라이트너 시스템)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A1 영단어 마스터 (모바일 최적화)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* 모바일 스크롤 바운스 방지 및 폰트 설정 */
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #f3f4f6;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .eng-font {
             font-family: 'Poppins', sans-serif;
         }
+        /* 3D 카드 효과 */
         .card-container {
             perspective: 1000px;
         }
@@ -21,11 +25,17 @@
             position: relative;
             width: 100%;
             transform-style: preserve-3d;
-            transition: transform 0.6s;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
             cursor: pointer;
+        }
+        .card:active {
+            transform: scale(0.98);
         }
         .card.flipped {
             transform: rotateY(180deg);
+        }
+        .card.flipped:active {
+            transform: rotateY(180deg) scale(0.98);
         }
         .card-face {
             position: absolute;
@@ -33,8 +43,8 @@
             height: 100%;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -55,9 +65,9 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        /* Loading Spinner */
+        /* 로딩 스피너 */
         .loader {
-            border: 4px solid #f3f3f3;
+            border: 4px solid #e5e7eb;
             border-top: 4px solid #4f46e5;
             border-radius: 50%;
             width: 40px;
@@ -68,50 +78,50 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* Proficiency Steps */
+        /* 숙련도 점 */
         .step-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background-color: #e5e7eb;
             transition: all 0.3s ease;
         }
         .step-dot.active {
-            transform: scale(1.2);
+            transform: scale(1.3);
         }
     </style>
 </head>
-<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
+<body class="text-gray-800 h-[100dvh] flex flex-col overflow-hidden select-none bg-gray-100">
 
     <!-- Header -->
-    <header class="bg-indigo-600 text-white p-4 shadow-md z-10 shrink-0">
+    <header class="bg-indigo-600 text-white p-3 shadow-md z-10 shrink-0">
         <div class="max-w-md mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            <h1 class="text-lg font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
-                <span id="header-title">A1 라이트너 학습기</span>
+                <span id="header-title">A1 라이트너</span>
             </h1>
-            <div class="text-xs font-medium bg-indigo-700 px-3 py-1 rounded-full">
+            <div class="text-[11px] font-medium bg-indigo-700/50 px-2.5 py-1 rounded-full border border-indigo-500">
                 마스터: <span id="progress-text">0%</span>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col p-4 w-full max-w-md mx-auto relative overflow-hidden">
+    <main class="flex-1 flex flex-col p-3 w-full max-w-md mx-auto relative overflow-hidden">
         
         <!-- Loading Screen -->
         <div id="loading-screen" class="absolute inset-0 bg-gray-100 z-50 flex flex-col items-center justify-center">
             <div class="loader mb-4"></div>
-            <p class="text-gray-600 font-medium">학습 데이터 최적화 중...</p>
+            <p class="text-gray-600 font-medium">A1 데이터 준비 중...</p>
             <p class="text-xs text-gray-400 mt-2" id="loading-count"></p>
         </div>
 
         <!-- Tab Navigation -->
-        <div class="flex w-full bg-gray-200 rounded-lg p-1 mb-4 shrink-0">
-            <button id="tab-study" onclick="switchTab('study')" class="flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all">학습 모드</button>
-            <button id="tab-list" onclick="switchTab('list')" class="flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all">전체 목록</button>
+        <div class="flex w-full bg-gray-200/80 p-1 mb-3 shrink-0 rounded-xl">
+            <button id="tab-study" onclick="switchTab('study')" class="flex-1 py-2 text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all">학습</button>
+            <button id="tab-list" onclick="switchTab('list')" class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all">목록</button>
         </div>
 
         <!-- Study Mode View -->
@@ -119,80 +129,82 @@
             
             <!-- Filter Options -->
             <div class="flex justify-between items-center mb-2 px-1 shrink-0">
-                <span class="text-sm text-gray-500" id="counter-text">1 / --</span>
-                <label class="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer">
-                    <input type="checkbox" id="hide-mastered" class="form-checkbox text-indigo-600 rounded" onchange="toggleFilter()" checked>
-                    <span>마스터 제외하고 보기</span>
+                <span class="text-xs font-mono text-gray-400" id="counter-text">1 / --</span>
+                <label class="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer active:opacity-70 transition-opacity">
+                    <input type="checkbox" id="hide-mastered" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" onchange="toggleFilter()" checked>
+                    <span>마스터 제외</span>
                 </label>
             </div>
 
             <!-- Flashcard Area -->
-            <div class="card-container w-full flex-1 relative mb-4 min-h-0">
+            <div class="card-container w-full flex-1 relative mb-3 min-h-0">
                 <div class="card w-full h-full" id="flashcard" onclick="flipCard()">
                     
                     <!-- Front -->
-                    <div class="card-face p-6 border-b-4 border-gray-200 transition-colors" id="card-front-border">
-                        <div class="w-full flex justify-between items-start absolute top-6 px-6">
-                            <span class="text-xs font-bold text-gray-400 tracking-widest uppercase">Question</span>
-                            <div class="flex gap-1" id="level-indicator-front">
+                    <div class="card-face p-6 border-b-4 border-gray-200" id="card-front-border">
+                        <div class="w-full flex justify-between items-start absolute top-5 px-5">
+                            <span class="text-[10px] font-bold text-gray-300 tracking-[0.2em] uppercase">WORD</span>
+                            <div class="flex gap-1.5" id="level-indicator-front">
                                 <!-- Dots injected by JS -->
                             </div>
                         </div>
 
-                        <h2 id="card-word" class="text-5xl font-bold text-gray-800 eng-font mb-4 text-center mt-4">Loading</h2>
+                        <!-- Responsive Text Size -->
+                        <h2 id="card-word" class="text-4xl md:text-5xl font-bold text-gray-800 eng-font mb-4 text-center mt-4 break-words w-full px-2">Loading</h2>
                         
-                        <button onclick="event.stopPropagation(); playAudio()" class="mt-2 p-3 bg-gray-50 rounded-full hover:bg-gray-100 text-indigo-600 transition-colors shadow-sm" title="발음 듣기">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <!-- Bigger Touch Target for Audio -->
+                        <button onclick="event.stopPropagation(); playAudio()" class="mt-4 p-4 bg-gray-50 rounded-full hover:bg-gray-100 active:bg-gray-200 text-indigo-600 transition-colors shadow-sm" title="발음 듣기">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                             </svg>
                         </button>
                         
-                        <div class="absolute bottom-10 text-gray-400 text-sm animate-bounce">
-                            터치하여 정답 확인
+                        <div class="absolute bottom-6 text-gray-300 text-xs animate-bounce font-medium">
+                            터치하여 뜻 확인
                         </div>
                     </div>
 
                     <!-- Back -->
                     <div class="card-face card-back no-scrollbar p-6 border-b-4 border-indigo-100">
-                        <div class="w-full flex justify-between items-start mb-4 border-b pb-2">
-                            <div>
-                                <h3 id="card-word-back" class="text-3xl font-bold text-indigo-600 eng-font">Loading</h3>
+                        <div class="w-full flex justify-between items-start mb-4 border-b border-gray-100 pb-3">
+                            <div class="flex-1 pr-2">
+                                <h3 id="card-word-back" class="text-2xl md:text-3xl font-bold text-indigo-600 eng-font break-words">Loading</h3>
                                 <p id="card-phonetic" class="text-gray-400 text-sm font-mono mt-1">/---/</p>
                             </div>
-                            <button onclick="event.stopPropagation(); playAudio()" class="text-gray-400 hover:text-indigo-600">
+                            <button onclick="event.stopPropagation(); playAudio()" class="p-2 -mr-2 text-gray-400 hover:text-indigo-600 active:text-indigo-800">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                                 </svg>
                             </button>
                         </div>
                         
-                        <div id="meanings-container" class="w-full space-y-4 text-left">
+                        <div id="meanings-container" class="w-full space-y-3 text-left pb-10">
                             <!-- Meanings will be injected here -->
                         </div>
 
-                        <div class="mt-auto pt-6 w-full text-center">
-                            <p class="text-xs text-gray-400 mb-2">스스로 평가해보세요</p>
+                        <div class="mt-auto w-full text-center">
+                            <p class="text-[10px] text-gray-300 uppercase tracking-widest">Self Check</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Controls (OX Quiz Style) -->
-            <div class="flex justify-between items-center gap-3 shrink-0 h-16">
-                <button onclick="updateProficiency(-1)" class="flex-1 h-full bg-white border-2 border-red-100 text-red-500 rounded-xl shadow-sm hover:bg-red-50 hover:border-red-300 active:scale-95 transition-all flex flex-col justify-center items-center">
+            <!-- Controls (OX Quiz Style) - Taller for easier tapping -->
+            <div class="flex justify-between items-center gap-3 shrink-0 h-[4.5rem]">
+                <button onclick="updateProficiency(-1)" class="flex-1 h-full bg-white border-2 border-red-100 text-red-500 rounded-2xl shadow-sm hover:bg-red-50 active:scale-95 transition-all flex flex-col justify-center items-center">
                     <span class="font-bold text-lg">모름 (X)</span>
-                    <span class="text-[10px] text-red-400">자주 복습</span>
+                    <span class="text-[10px] text-red-400 font-medium">1단계 하락</span>
                 </button>
 
-                <button onclick="updateProficiency(1)" class="flex-1 h-full bg-indigo-600 border-2 border-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 active:scale-95 transition-all flex flex-col justify-center items-center">
+                <button onclick="updateProficiency(1)" class="flex-1 h-full bg-indigo-600 border-2 border-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 active:bg-indigo-700 active:scale-95 transition-all flex flex-col justify-center items-center">
                     <span class="font-bold text-lg">알아요 (O)</span>
-                    <span class="text-[10px] text-indigo-200">다음 단계로</span>
+                    <span class="text-[10px] text-indigo-200 font-medium">1단계 상승</span>
                 </button>
             </div>
         </div>
 
         <!-- List Mode View (Hidden by default) -->
-        <div id="view-list" class="hidden w-full h-full flex-col bg-gray-50 rounded-lg shadow-inner overflow-hidden">
+        <div id="view-list" class="hidden w-full h-full flex-col bg-gray-50 rounded-xl shadow-inner overflow-hidden border border-gray-100">
             <div class="p-3 bg-white border-b flex justify-between items-center shrink-0 gap-2">
                 <div class="relative flex-1">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -200,11 +212,11 @@
                             <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                         </svg>
                     </div>
-                    <input type="text" id="search-input" onkeyup="filterList()" placeholder="단어 검색..." class="w-full pl-9 pr-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <input type="text" id="search-input" onkeyup="filterList()" placeholder="단어 검색..." class="w-full pl-9 pr-3 py-2.5 border-gray-200 bg-gray-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
                 </div>
-                <button onclick="resetAllData()" class="text-xs text-red-500 underline hover:text-red-700 whitespace-nowrap">초기화</button>
+                <button onclick="resetAllData()" class="px-3 py-2 text-xs font-bold text-red-500 bg-red-50 rounded-lg active:bg-red-100 whitespace-nowrap">초기화</button>
             </div>
-            <div id="word-list-container" class="flex-1 overflow-y-auto p-3 space-y-3">
+            <div id="word-list-container" class="flex-1 overflow-y-auto p-2 space-y-2">
                 <!-- Word list items injected here -->
             </div>
         </div>
@@ -212,7 +224,7 @@
     </main>
 
     <script>
-        // --- Data: Full A1 Level Words (Complete ~935 words) ---
+        // --- Data: A1 Level Words (Beginner) ---
         // Format: [Word, Phonetic, "pos:meaning", "pos:meaning", ...]
         const rawVocabData = [
             ["a", "/ə/", "det:하나의"], ["about", "/əˈbaʊt/", "prep:~에 대하여", "adv:약"], ["above", "/əˈbʌv/", "prep:~위에"], ["across", "/əˈkrɒs/", "prep:~을 가로질러"], ["action", "/ˈæk.ʃən/", "n:행동, 조치"],
@@ -264,7 +276,7 @@
             ["egg", "/eɡ/", "n:달걀"], ["eight", "/eɪt/", "num:8, 여덟"], ["eighteen", "/ˌeɪˈtiːn/", "num:18, 열여덟"], ["eighty", "/ˈeɪ.ti/", "num:80, 여든"], ["elephant", "/ˈel.ɪ.fənt/", "n:코끼리"],
             ["eleven", "/ɪˈlev.ən/", "num:11, 열하나"], ["else", "/els/", "adv:그 밖의"], ["email", "/ˈiː.meɪl/", "n:이메일"], ["end", "/end/", "n:끝", "v:끝나다"], ["enjoy", "/ɪnˈdʒɔɪ/", "v:즐기다"],
             ["enough", "/ɪˈnʌf/", "adj:충분한"], ["enter", "/ˈen.tər/", "v:들어가다"], ["especially", "/ɪˈspeʃ.əl.i/", "adv:특히"], ["europe", "/ˈjʊə.rəp/", "n:유럽"], ["euro", "/ˈjʊə.rəʊ/", "n:유로"],
-            ["evening", "/ˈiːv.nɪŋ/", "n:저녁"], ["event", "/ɪˈvent/", "n:사건, 행사"], ["ever", "/ˈev.ri/", "adv:언제든, 한번이라도"], ["every", "/ˈev.ri/", "det:모든"], ["everybody", "/ˈev.ri.bɒd.i/", "pron:모든 사람"],
+            ["evening", "/ˈiːv.nɪŋ/", "n:저녁"], ["event", "/ɪˈvent/", "n:사건, 행사"], ["ever", "/ˈev.ər/", "adv:언제든, 한번이라도"], ["every", "/ˈev.ri/", "det:모든"], ["everybody", "/ˈev.ri.bɒd.i/", "pron:모든 사람"],
             ["everyone", "/ˈev.ri.wʌn/", "pron:모든 사람"], ["everything", "/ˈev.ri.θɪŋ/", "pron:모든 것"], ["exam", "/ɪɡˈzæm/", "n:시험"], ["example", "/ɪɡˈzɑːm.pəl/", "n:예시"], ["excited", "/ɪkˈsaɪ.tɪd/", "adj:신이 난"],
             ["exciting", "/ɪkˈsaɪ.tɪŋ/", "adj:신나는"], ["exercise", "/ˈek.sə.saɪz/", "n:운동", "v:운동하다"], ["expensive", "/ɪkˈspen.sɪv/", "adj:비싼"], ["explain", "/ɪkˈspleɪn/", "v:설명하다"], ["eye", "/aɪ/", "n:눈"],
             ["face", "/feɪs/", "n:얼굴"], ["fact", "/fækt/", "n:사실"], ["factory", "/ˈfæk.tər.i/", "n:공장"], ["fail", "/feɪl/", "v:실패하다"], ["fall", "/fɔːl/", "v:떨어지다", "n:가을"],
@@ -405,32 +417,17 @@
         ];
 
         // --- State Management ---
-        // learnedMap: { id: level (0, 1, 2, 3) }
-        // Level 0: New
-        // Level 1: Learning
-        // Level 2: Familiar
-        // Level 3: Mastered
         let vocabData = [];
         let currentIndex = 0;
         let learnedMap = JSON.parse(localStorage.getItem('a1_vocab_levels')) || {};
         let filteredIndices = [];
-        let isFilteredMode = true; // Default to filtering mastered words
+        let isFilteredMode = true; 
         let searchTerm = "";
 
         // --- Initialization ---
         window.onload = function() {
             parseVocabData();
             
-            // Migrate old data if exists (simple array -> object)
-            const oldData = JSON.parse(localStorage.getItem('a1_vocab_learned'));
-            if (oldData && Array.isArray(oldData)) {
-                oldData.forEach(id => {
-                    if (learnedMap[id] === undefined) learnedMap[id] = 3; // Old 'learned' = Mastered
-                });
-                localStorage.removeItem('a1_vocab_learned'); // Clear old
-                localStorage.setItem('a1_vocab_levels', JSON.stringify(learnedMap));
-            }
-
             setTimeout(() => {
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('header-title').textContent = `A1 라이트너 (${vocabData.length})`;
@@ -458,12 +455,11 @@
                     meanings: meanings
                 };
             });
-            document.getElementById('loading-count').textContent = `${vocabData.length}개 데이터 로드됨`;
+            document.getElementById('loading-count').textContent = `${vocabData.length}개 A1 데이터 로드됨`;
         }
         
         function updateFilteredIndices() {
             if (isFilteredMode) {
-                // Filter out Level 3 (Mastered) words
                 filteredIndices = vocabData
                     .map((_, index) => index)
                     .filter(index => {
@@ -472,18 +468,15 @@
                     });
                 
                 if (filteredIndices.length === 0 && vocabData.length > 0) {
-                   // All words mastered!
-                   alert("대단합니다! 모든 단어를 마스터(3단계) 하셨습니다! 전체 복습을 위해 필터를 해제합니다.");
+                   alert("대단합니다! 모든 A1 단어를 마스터(3단계) 하셨습니다! 전체 복습을 위해 필터를 해제합니다.");
                    document.getElementById('hide-mastered').checked = false;
                    isFilteredMode = false;
                    filteredIndices = vocabData.map((_, index) => index);
                 }
             } else {
-                // All words
                 filteredIndices = vocabData.map((_, index) => index);
             }
             
-            // Shuffle logic could be added here for SRS, but simple cycle for now
             if (currentIndex >= filteredIndices.length) currentIndex = 0;
         }
 
@@ -501,34 +494,29 @@
             const card = document.getElementById('flashcard');
             const data = getCurrentWordData();
             
-            // Reset flip state
             card.classList.remove('flipped');
 
             if (!data) {
-                document.getElementById('card-word').textContent = "Empty";
+                document.getElementById('card-word').textContent = "완료!";
+                document.getElementById('card-word-back').textContent = "End";
                 return;
             }
 
             const level = getLevel(data.id);
 
-            // Visualizing Levels (Dots)
             const indicator = document.getElementById('level-indicator-front');
             indicator.innerHTML = '';
-            // 3 dots total
             for(let i=0; i<3; i++) {
                 const dot = document.createElement('div');
                 dot.className = `step-dot ${i < level ? getColorForLevel(level) : ''}`;
                 indicator.appendChild(dot);
             }
 
-            // Border Color based on level
             const frontFace = document.getElementById('card-front-border');
             frontFace.style.borderColor = getBorderColor(level);
 
-            // Front
             document.getElementById('card-word').textContent = data.word;
             
-            // Back
             document.getElementById('card-word-back').textContent = data.word;
             document.getElementById('card-phonetic').textContent = data.phonetic || "";
             
@@ -552,7 +540,6 @@
                 meaningsContainer.appendChild(row);
             });
 
-            // Update Counter
             document.getElementById('counter-text').textContent = `${currentIndex + 1} / ${filteredIndices.length}`;
         }
 
@@ -570,7 +557,6 @@
             return '#E5E7EB'; // Gray
         }
 
-        // --- Helpers ---
         function getPosColor(pos) {
             switch(pos) {
                 case 'n': return 'bg-blue-100 text-blue-700';
@@ -582,7 +568,6 @@
         }
 
         function getPosKorean(pos) {
-            // Simplified mapping
             const map = {
                 'n': '명사', 'v': '동사', 'adj': '형용사', 'adv': '부사',
                 'num': '수사', 'prep': '전치사', 'int': '감탄사', 'pron': '대명사',
@@ -590,8 +575,6 @@
             };
             return map[pos] || pos;
         }
-
-        // --- Interactions ---
 
         function flipCard() {
             const card = document.getElementById('flashcard');
@@ -604,10 +587,6 @@
 
             let currentLevel = learnedMap[data.id] || 0;
             
-            // Logic:
-            // Change +1 -> Level Up (Max 3)
-            // Change -1 -> Level Down (Min 0)
-            
             let newLevel = currentLevel + change;
             if (newLevel < 0) newLevel = 0;
             if (newLevel > 3) newLevel = 3;
@@ -615,26 +594,15 @@
             learnedMap[data.id] = newLevel;
             localStorage.setItem('a1_vocab_levels', JSON.stringify(learnedMap));
 
-            // Feedback Animation? (Optional)
-            
-            // Move to next card
-            // If we just Mastered it (Level 3), and we are in Filter mode, 
-            // the indices will shift on next calculation.
-            // For smooth UX, we just go next for now.
-            
             updateProgress();
-            renderList(); // Update list indicators
+            renderList();
 
-            // Slight delay to show result then move
             if (isFilteredMode && newLevel === 3) {
-                 // If mastered, it will disappear from list, so we stick to index or re-calc
-                 // Re-calc indices to remove it from view
                  setTimeout(() => {
                     updateFilteredIndices();
                     renderCard();
                  }, 300);
             } else {
-                // Just go to next card in current set
                 nextCard();
             }
         }
@@ -646,7 +614,6 @@
         }
 
         function prevCard() {
-            // Not used in UI currently but good to have
             if (filteredIndices.length === 0) return;
             currentIndex = (currentIndex - 1 + filteredIndices.length) % filteredIndices.length;
             renderCard();
@@ -671,13 +638,10 @@
         function updateProgress() {
             if (vocabData.length === 0) return;
             
-            // Count Mastered (Level 3)
             const masteredCount = Object.values(learnedMap).filter(l => l === 3).length;
             const percentage = Math.round((masteredCount / vocabData.length) * 100);
             document.getElementById('progress-text').textContent = `${percentage}%`;
         }
-
-        // --- List View Logic ---
         
         function switchTab(tab) {
             const btnStudy = document.getElementById('tab-study');
@@ -686,8 +650,8 @@
             const viewList = document.getElementById('view-list');
 
             if (tab === 'study') {
-                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all";
-                btnList.className = "flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all";
+                btnStudy.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all";
+                btnList.className = "flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all";
                 viewStudy.classList.remove('hidden');
                 viewStudy.classList.add('flex');
                 
@@ -695,8 +659,8 @@
                 viewList.classList.remove('flex');
                 renderCard(); 
             } else {
-                btnList.className = "flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all";
-                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all";
+                btnList.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all";
+                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all";
                 viewList.classList.remove('hidden');
                 viewList.classList.add('flex');
                 
@@ -722,7 +686,6 @@
                 return;
             }
 
-            // Limit for performance
             const displayList = filteredList.slice(0, 100); 
 
             displayList.forEach(item => {
@@ -738,7 +701,6 @@
                    switchTab('study');
                 };
 
-                // Level Badge
                 let levelBadge = '';
                 if (level === 0) levelBadge = '<span class="text-[10px] text-gray-400 border border-gray-200 px-2 py-0.5 rounded">시작 전</span>';
                 else if (level === 1) levelBadge = '<span class="text-[10px] text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded font-bold">학습 중</span>';
@@ -770,13 +732,10 @@
         }
 
         function resetAllData() {
-            if(confirm('모든 학습 기록을 초기화 하시겠습니까?\n(주의: 모든 진행 상황이 삭제됩니다)')) {
-                // 1. 데이터 초기화
+            if(confirm('모든 A1 학습 기록을 초기화 하시겠습니까?\n(주의: 모든 진행 상황이 삭제됩니다)')) {
                 learnedMap = {};
                 localStorage.removeItem('a1_vocab_levels');
-                localStorage.removeItem('a1_vocab_learned'); // 구 버전 데이터 혹시 남아있으면 삭제
                 
-                // 2. 검색 및 필터 상태 초기화
                 searchTerm = "";
                 document.getElementById('search-input').value = "";
                 
@@ -785,7 +744,6 @@
                 
                 currentIndex = 0;
 
-                // 3. 화면 갱신
                 updateProgress();
                 updateFilteredIndices();
                 renderCard();
