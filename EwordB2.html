@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>B2 영단어 마스터 (모바일 최적화)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* 모바일 스크롤 바운스 방지 및 폰트 설정 */
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f3f4f6;
+            overscroll-behavior: none; /* 당겨서 새로고침 등 방지 */
+            -webkit-tap-highlight-color: transparent; /* 터치 하이라이트 제거 */
+        }
+        .eng-font {
+            font-family: 'Poppins', sans-serif;
+        }
+        /* 3D 카드 효과 */
+        .card-container {
+            perspective: 1000px;
+        }
+        .card {
+            position: relative;
+            width: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .card:active {
+            transform: scale(0.98); /* 터치 시 살짝 눌리는 효과 */
+        }
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        .card.flipped:active {
+            transform: rotateY(180deg) scale(0.98);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1.5rem; /* 더 둥근 모서리 */
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+            background-color: #ffffff;
+            overflow-y: auto;
+            justify-content: flex-start;
+            padding-top: 2rem;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* 로딩 스피너 */
+        .loader {
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* 숙련도 점 */
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            transition: all 0.3s ease;
+        }
+        .step-dot.active {
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body class="text-gray-800 h-[100dvh] flex flex-col overflow-hidden select-none bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white p-3 shadow-md z-10 shrink-0">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 class="text-lg font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <span id="header-title">B2 라이트너</span>
+            </h1>
+            <div class="text-[11px] font-medium bg-indigo-700/50 px-2.5 py-1 rounded-full border border-indigo-500">
+                마스터: <span id="progress-text">0%</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col p-3 w-full max-w-md mx-auto relative overflow-hidden">
+        
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="absolute inset-0 bg-gray-100 z-50 flex flex-col items-center justify-center">
+            <div class="loader mb-4"></div>
+            <p class="text-gray-600 font-medium">데이터 준비 중...</p>
+            <p class="text-xs text-gray-400 mt-2" id="loading-count"></p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="flex w-full bg-gray-200/80 p-1 mb-3 shrink-0 rounded-xl">
+            <button id="tab-study" onclick="switchTab('study')" class="flex-1 py-2 text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all">학습</button>
+            <button id="tab-list" onclick="switchTab('list')" class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all">목록</button>
+        </div>
+
+        <!-- Study Mode View -->
+        <div id="view-study" class="w-full flex-1 flex flex-col relative h-full min-h-0">
+            
+            <!-- Filter Options -->
+            <div class="flex justify-between items-center mb-2 px-1 shrink-0">
+                <span class="text-xs font-mono text-gray-400" id="counter-text">1 / --</span>
+                <label class="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer active:opacity-70 transition-opacity">
+                    <input type="checkbox" id="hide-mastered" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" onchange="toggleFilter()" checked>
+                    <span>마스터 제외</span>
+                </label>
+            </div>
+
+            <!-- Flashcard Area -->
+            <div class="card-container w-full flex-1 relative mb-3 min-h-0">
+                <div class="card w-full h-full" id="flashcard" onclick="flipCard()">
+                    
+                    <!-- Front -->
+                    <div class="card-face p-6 border-b-4 border-gray-200" id="card-front-border">
+                        <div class="w-full flex justify-between items-start absolute top-5 px-5">
+                            <span class="text-[10px] font-bold text-gray-300 tracking-[0.2em] uppercase">WORD</span>
+                            <div class="flex gap-1.5" id="level-indicator-front">
+                                <!-- Dots injected by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Responsive Text Size -->
+                        <h2 id="card-word" class="text-4xl md:text-5xl font-bold text-gray-800 eng-font mb-4 text-center mt-4 break-words w-full px-2">Loading</h2>
+                        
+                        <!-- Bigger Touch Target for Audio -->
+                        <button onclick="event.stopPropagation(); playAudio()" class="mt-4 p-4 bg-gray-50 rounded-full hover:bg-gray-100 active:bg-gray-200 text-indigo-600 transition-colors shadow-sm" title="발음 듣기">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                        </button>
+                        
+                        <div class="absolute bottom-6 text-gray-300 text-xs animate-bounce font-medium">
+                            터치하여 뜻 확인
+                        </div>
+                    </div>
+
+                    <!-- Back -->
+                    <div class="card-face card-back no-scrollbar p-6 border-b-4 border-indigo-100">
+                        <div class="w-full flex justify-between items-start mb-4 border-b border-gray-100 pb-3">
+                            <div class="flex-1 pr-2">
+                                <h3 id="card-word-back" class="text-2xl md:text-3xl font-bold text-indigo-600 eng-font break-words">Loading</h3>
+                                <p id="card-phonetic" class="text-gray-400 text-sm font-mono mt-1">/---/</p>
+                            </div>
+                            <button onclick="event.stopPropagation(); playAudio()" class="p-2 -mr-2 text-gray-400 hover:text-indigo-600 active:text-indigo-800">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div id="meanings-container" class="w-full space-y-3 text-left pb-10">
+                            <!-- Meanings will be injected here -->
+                        </div>
+
+                        <div class="mt-auto w-full text-center">
+                            <p class="text-[10px] text-gray-300 uppercase tracking-widest">Self Check</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls (OX Quiz Style) - Taller for easier tapping -->
+            <div class="flex justify-between items-center gap-3 shrink-0 h-[4.5rem]">
+                <button onclick="updateProficiency(-1)" class="flex-1 h-full bg-white border-2 border-red-100 text-red-500 rounded-2xl shadow-sm hover:bg-red-50 active:scale-95 transition-all flex flex-col justify-center items-center">
+                    <span class="font-bold text-lg">모름 (X)</span>
+                    <span class="text-[10px] text-red-400 font-medium">1단계 하락</span>
+                </button>
+
+                <button onclick="updateProficiency(1)" class="flex-1 h-full bg-indigo-600 border-2 border-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 active:bg-indigo-700 active:scale-95 transition-all flex flex-col justify-center items-center">
+                    <span class="font-bold text-lg">알아요 (O)</span>
+                    <span class="text-[10px] text-indigo-200 font-medium">1단계 상승</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- List Mode View (Hidden by default) -->
+        <div id="view-list" class="hidden w-full h-full flex-col bg-gray-50 rounded-xl shadow-inner overflow-hidden border border-gray-100">
+            <div class="p-3 bg-white border-b flex justify-between items-center shrink-0 gap-2">
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <input type="text" id="search-input" onkeyup="filterList()" placeholder="단어 검색..." class="w-full pl-9 pr-3 py-2.5 border-gray-200 bg-gray-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                </div>
+                <button onclick="resetAllData()" class="px-3 py-2 text-xs font-bold text-red-500 bg-red-50 rounded-lg active:bg-red-100 whitespace-nowrap">초기화</button>
+            </div>
+            <div id="word-list-container" class="flex-1 overflow-y-auto p-2 space-y-2">
+                <!-- Word list items injected here -->
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Data: B2 Level Words (Upper Intermediate) ---
+        const rawVocabData = [
+            ["abandon", "/əˈbæn.dən/", "v:버리다, 포기하다"], ["absolute", "/ˈæb.sə.luːt/", "adj:절대적인"], ["absorb", "/əbˈzɔːb/", "v:흡수하다"], ["abstract", "/ˈæb.strækt/", "adj:추상적인"], ["abuse", "/əˈbjuːs/", "n:남용, 학대", "v:남용하다"],
+            ["academic", "/ˌæk.əˈdem.ɪk/", "adj:학업의, 학구적인"], ["accelerate", "/əkˈsel.ə.reɪt/", "v:가속하다"], ["accent", "/ˈæk.sent/", "n:강세, 말투"], ["acceptable", "/əkˈsep.tə.bəl/", "adj:용인되는"], ["access", "/ˈæk.ses/", "n:접근", "v:접근하다"],
+            ["accessible", "/əkˈses.ə.bəl/", "adj:접근 가능한"], ["accidental", "/ˌæk.sɪˈden.təl/", "adj:우연한"], ["accommodate", "/əˈkɒm.ə.deɪt/", "v:수용하다, 숙박시키다"], ["accommodation", "/əˌkɒm.əˈdeɪ.ʃən/", "n:숙소, 거처"], ["accompany", "/əˈkʌm.pə.ni/", "v:동반하다"],
+            ["accomplish", "/əˈkʌm.plɪʃ/", "v:성취하다"], ["accordance", "/əˈkɔː.dəns/", "n:일치, 합치"], ["according", "/əˈkɔː.dɪŋ/", "adj:~에 따르면"], ["account", "/əˈkaʊnt/", "n:계좌, 설명", "v:간주하다"], ["accuracy", "/ˈæk.jə.rə.si/", "n:정확성"],
+            ["accurate", "/ˈæk.jə.rət/", "adj:정확한"], ["accusation", "/ˌæk.jəˈzeɪ.ʃən/", "n:고발, 비난"], ["accuse", "/əˈkjuːz/", "v:고발하다"], ["achieve", "/əˈtʃiːv/", "v:달성하다"], ["achievement", "/əˈtʃiːv.mənt/", "n:업적, 성취"],
+            ["acid", "/ˈæs.ɪd/", "n:산", "adj:산성의"], ["acknowledge", "/əkˈnɒl.ɪdʒ/", "v:인정하다"], ["acquire", "/əˈkwaɪər/", "v:얻다, 습득하다"], ["acquisition", "/ˌæk.wɪˈzɪʃ.ən/", "n:습득, 인수"], ["acre", "/ˈeɪ.kər/", "n:에이커"],
+            ["activate", "/ˈæk.tɪ.veɪt/", "v:작동시키다"], ["active", "/ˈæk.tɪv/", "adj:활동적인"], ["activist", "/ˈæk.tɪ.vɪst/", "n:운동가"], ["activity", "/ækˈtɪv.ə.ti/", "n:활동"], ["actual", "/ˈæk.tʃu.əl/", "adj:실제의"],
+            ["actually", "/ˈæk.tʃu.ə.li/", "adv:사실은"], ["adapt", "/əˈdæpt/", "v:적응하다"], ["addiction", "/əˈdɪk.ʃən/", "n:중독"], ["additional", "/əˈdɪʃ.ən.əl/", "adj:추가의"], ["address", "/əˈdres/", "v:다루다, 연설하다"],
+            ["adequate", "/ˈæd.ə.kwət/", "adj:적절한, 충분한"], ["adhere", "/ədˈhɪər/", "v:고수하다, 들러붙다"], ["adjust", "/əˈdʒʌst/", "v:조절하다, 적응하다"], ["adjustment", "/əˈdʒʌst.mənt/", "n:수정, 적응"], ["administration", "/ədˌmɪn.ɪˈstreɪ.ʃən/", "n:행정, 관리"],
+            ["admire", "/ədˈmaɪər/", "v:존경하다"], ["admission", "/ədˈmɪʃ.ən/", "n:입장, 인정"], ["admit", "/ədˈmɪt/", "v:인정하다, 들이다"], ["adolescent", "/ˌæd.əˈles.ənt/", "n:청소년"], ["adopt", "/əˈdɒpt/", "v:채택하다, 입양하다"],
+            ["advance", "/ədˈvɑːns/", "n:진전", "v:나아가다"], ["advanced", "/ədˈvɑːnst/", "adj:고급의"], ["adventure", "/ədˈven.tʃər/", "n:모험"], ["adverse", "/ˈæd.vɜːs/", "adj:부정적인, 불리한"], ["advertise", "/ˈæd.və.taɪz/", "v:광고하다"],
+            ["advertisement", "/ədˈvɜː.tɪs.mənt/", "n:광고"], ["advocate", "/ˈæd.və.keɪt/", "v:옹호하다", "n:옹호자"], ["aesthetic", "/iːsˈθet.ɪk/", "adj:미적인"], ["affair", "/əˈfeər/", "n:일, 문제"], ["affect", "/əˈfekt/", "v:영향을 미치다"],
+            ["affection", "/əˈfek.ʃən/", "n:애정"], ["afford", "/əˈfɔːd/", "v:여유가 있다"], ["affordable", "/əˈfɔː.də.bəl/", "adj:알맞은 가격의"], ["agency", "/ˈeɪ.dʒən.si/", "n:대리점, 기관"], ["agenda", "/əˈdʒen.də/", "n:의제"],
+            ["agent", "/ˈeɪ.dʒənt/", "n:대리인"], ["aggression", "/əˈɡreʃ.ən/", "n:공격성"], ["aggressive", "/əˈɡres.ɪv/", "adj:공격적인"], ["agreement", "/əˈɡriː.mənt/", "n:합의"], ["agricultural", "/ˌæɡ.rɪˈkʌl.tʃər.əl/", "adj:농업의"],
+            ["agriculture", "/ˈæɡ.rɪ.kʌl.tʃər/", "n:농업"], ["aid", "/eɪd/", "n:원조", "v:돕다"], ["aim", "/eɪm/", "n:목표", "v:겨냥하다"], ["aircraft", "/ˈeə.krɑːft/", "n:항공기"], ["airline", "/ˈeə.laɪn/", "n:항공사"],
+            ["airport", "/ˈeə.pɔːt/", "n:공항"], ["alarm", "/əˈlɑːm/", "n:경보", "v:불안하게 하다"], ["albeit", "/ɔːlˈbiː.ɪt/", "conj:비록 ~일지라도"], ["alcohol", "/ˈæl.kə.hɒl/", "n:알코올"], ["alert", "/əˈlɜːt/", "adj:경계하는", "n:경계"],
+            ["alien", "/ˈeɪ.li.ən/", "n:외계인, 외국인", "adj:이질적인"], ["align", "/əˈlaɪn/", "v:정렬하다"], ["alike", "/əˈlaɪk/", "adj:비슷한"], ["allegation", "/ˌæl.ɪˈɡeɪ.ʃən/", "n:혐의, 주장"], ["allege", "/əˈledʒ/", "v:주장하다"],
+            ["alliance", "/əˈlaɪ.əns/", "n:동맹"], ["allocate", "/ˈæl.ə.keɪt/", "v:할당하다"], ["allow", "/əˈlaʊ/", "v:허락하다"], ["allowance", "/əˈlaʊ.əns/", "n:용돈, 수당"], ["ally", "/ˈæl.aɪ/", "n:동맹국"],
+            ["alter", "/ˈɒl.tər/", "v:바꾸다"], ["alternative", "/ɒlˈtɜː.nə.tɪv/", "n:대안", "adj:대체의"], ["although", "/ɔːlˈðəʊ/", "conj:비록 ~일지라도"], ["altogether", "/ˌɔːl.təˈɡeð.ər/", "adv:완전히"], ["amateur", "/ˈæm.ə.tər/", "n:아마추어"],
+            ["amaze", "/əˈmeɪz/", "v:놀라게 하다"], ["ambassador", "/æmˈbæs.ə.dər/", "n:대사"], ["ambition", "/æmˈbɪʃ.ən/", "n:야망"], ["ambitious", "/æmˈbɪʃ.əs/", "adj:야심 있는"], ["amend", "/əˈmend/", "v:개정하다"],
+            ["amendment", "/əˈmend.mənt/", "n:개정"], ["amid", "/əˈmɪd/", "prep:~가운데에"], ["among", "/əˈmʌŋ/", "prep:~사이에"], ["amount", "/əˈmaʊnt/", "n:양"], ["amusing", "/əˈmjuː.zɪŋ/", "adj:재미있는"],
+            ["analogy", "/əˈnæl.ə.dʒi/", "n:유추"], ["analyse", "/ˈæn.əl.aɪz/", "v:분석하다"], ["analysis", "/əˈnæl.ə.sɪs/", "n:분석"], ["analyst", "/ˈæn.ə.lɪst/", "n:분석가"], ["ancestor", "/ˈæn.ses.tər/", "n:조상"],
+            ["anchor", "/ˈæŋ.kər/", "n:닻, 앵커"], ["ancient", "/ˈeɪn.ʃənt/", "adj:고대의"], ["anger", "/ˈæŋ.ɡər/", "n:분노"], ["angle", "/ˈæŋ.ɡəl/", "n:각도"], ["angry", "/ˈæŋ.ɡri/", "adj:화난"],
+            ["animal", "/ˈæn.ɪ.məl/", "n:동물"], ["animation", "/ˌæn.ɪˈmeɪ.ʃən/", "n:만화 영화, 활기"], ["anniversary", "/ˌæn.ɪˈvɜː.sər.i/", "n:기념일"], ["announce", "/əˈnaʊns/", "v:발표하다"], ["announcement", "/əˈnaʊns.mənt/", "n:발표"],
+            ["annoy", "/əˈnɔɪ/", "v:짜증나게 하다"], ["annual", "/ˈæn.ju.əl/", "adj:연간의"], ["anomaly", "/əˈnɒm.ə.li/", "n:변칙"], ["anticipate", "/ænˈtɪs.ɪ.peɪt/", "v:예상하다"], ["anxiety", "/æŋˈzaɪ.ə.ti/", "n:불안"],
+            ["anxious", "/ˈæŋk.ʃəs/", "adj:불안해하는"], ["anyway", "/ˈen.i.weɪ/", "adv:어쨌든"], ["apart", "/əˈpɑːt/", "adv:떨어져"], ["apologize", "/əˈpɒl.ə.dʒaɪz/", "v:사과하다"], ["apology", "/əˈpɒl.ə.dʒi/", "n:사과"],
+            ["apparatus", "/ˌæp.əˈreɪ.təs/", "n:기구, 장치"], ["apparent", "/əˈpær.ənt/", "adj:분명한"], ["apparently", "/əˈpær.ənt.li/", "adv:보아하니"], ["appeal", "/əˈpiːl/", "n:호소", "v:호소하다"], ["appealing", "/əˈpiː.lɪŋ/", "adj:매력적인"],
+            ["appear", "/əˈpɪər/", "v:나타나다"], ["appearance", "/əˈpɪə.rəns/", "n:외모"], ["appetite", "/ˈæp.ə.taɪt/", "n:식욕"], ["applaud", "/əˈplɔːd/", "v:박수갈채하다"], ["applicable", "/əˈplɪk.ə.bəl/", "adj:해당되는"],
+            ["applicant", "/ˈæp.lɪ.kənt/", "n:지원자"], ["application", "/ˌæp.lɪˈkeɪ.ʃən/", "n:지원, 적용"], ["apply", "/əˈplaɪ/", "v:지원하다, 적용하다"], ["appoint", "/əˈpɔɪnt/", "v:임명하다"], ["appointment", "/əˈpɔɪnt.mənt/", "n:약속, 임명"],
+            ["appreciate", "/əˈpriː.ʃi.eɪt/", "v:감사하다, 진가를 알다"], ["appreciation", "/əˌpriː.ʃiˈeɪ.ʃən/", "n:감사, 감상"], ["approach", "/əˈprəʊtʃ/", "v:접근하다", "n:접근"], ["appropriate", "/əˈprəʊ.pri.ət/", "adj:적절한"], ["approval", "/əˈpruː.vəl/", "n:승인"],
+            ["approve", "/əˈpruːv/", "v:승인하다"], ["approximate", "/əˈprɒk.sɪ.mət/", "adj:대략적인"], ["arbitrary", "/ˈɑː.bɪ.trər.i/", "adj:임의적인"], ["architect", "/ˈɑː.kɪ.tekt/", "n:건축가"], ["architectural", "/ˌɑː.kɪˈtek.tʃər.əl/", "adj:건축의"],
+            ["architecture", "/ˈɑː.kɪ.tek.tʃər/", "n:건축"], ["archive", "/ˈɑː.kaɪv/", "n:기록 보관소"], ["area", "/ˈeə.ri.ə/", "n:지역"], ["arena", "/əˈriː.nə/", "n:경기장"], ["argue", "/ˈɑːɡ.juː/", "v:논쟁하다"],
+            ["argument", "/ˈɑːɡ.jə.mənt/", "n:논쟁"], ["arise", "/əˈraɪz/", "v:발생하다"], ["armed", "/ɑːmd/", "adj:무장한"], ["arms", "/ɑːmz/", "n:무기"], ["army", "/ˈɑː.mi/", "n:군대"],
+            ["arrange", "/əˈreɪndʒ/", "v:정하다, 배열하다"], ["arrangement", "/əˈreɪndʒ.mənt/", "n:준비, 배열"], ["array", "/əˈreɪ/", "n:집합체, 배열"], ["arrest", "/əˈrest/", "v:체포하다"], ["arrival", "/əˈraɪ.vəl/", "n:도착"],
+            ["arrive", "/əˈraɪv/", "v:도착하다"], ["art", "/ɑːt/", "n:예술"], ["article", "/ˈɑː.tɪ.kəl/", "n:기사"], ["articulate", "/ɑːˈtɪk.jə.lət/", "adj:분명한", "v:분명히 표현하다"], ["artificial", "/ˌɑː.tɪˈfɪʃ.əl/", "adj:인공의"],
+            ["artist", "/ˈɑː.tɪst/", "n:예술가"], ["artistic", "/ɑːˈtɪs.tɪk/", "adj:예술적인"], ["ashamed", "/əˈʃeɪmd/", "adj:부끄러운"], ["aside", "/əˈsaɪd/", "adv:따로"], ["ask", "/ɑːsk/", "v:묻다, 요청하다"],
+            ["asleep", "/əˈsliːp/", "adj:잠든"], ["aspect", "/ˈæs.pekt/", "n:측면"], ["aspiration", "/ˌæs.pɪˈreɪ.ʃən/", "n:열망"], ["aspire", "/əˈspaɪər/", "v:열망하다"], ["assert", "/əˈsɜːt/", "v:주장하다"],
+            ["assertion", "/əˈsɜː.ʃən/", "n:주장"], ["assess", "/əˈses/", "v:평가하다"], ["assessment", "/əˈses.mənt/", "n:평가"], ["asset", "/ˈæs.et/", "n:자산"], ["assign", "/əˈsaɪn/", "v:배정하다"],
+            ["assignment", "/əˈsaɪn.mənt/", "n:과제"], ["assist", "/əˈsɪst/", "v:돕다"], ["assistance", "/əˈsɪs.təns/", "n:도움"], ["assistant", "/əˈsɪs.tənt/", "n:조수"], ["associate", "/əˈsəʊ.si.eɪt/", "v:연관시키다"],
+            ["association", "/əˌsəʊ.siˈeɪ.ʃən/", "n:협회"], ["assume", "/əˈsjuːm/", "v:가정하다"], ["assumption", "/əˈsʌmp.ʃən/", "n:가정"], ["assurance", "/əˈʃɔː.rəns/", "n:보장, 확신"], ["assure", "/əˈʃɔːr/", "v:장담하다"],
+            ["astonish", "/əˈstɒn.ɪʃ/", "v:놀라게 하다"], ["asylum", "/əˈsaɪ.ləm/", "n:망명, 보호 시설"], ["athlete", "/ˈæθ.liːt/", "n:운동선수"], ["atmosphere", "/ˈæt.mə.sfɪər/", "n:분위기"], ["atrocity", "/əˈtrɒs.ə.ti/", "n:잔혹 행위"],
+            ["attach", "/əˈtætʃ/", "v:붙이다"], ["attachment", "/əˈtætʃ.mənt/", "n:부착, 애착"], ["attack", "/əˈtæk/", "n:공격", "v:공격하다"], ["attain", "/əˈteɪn/", "v:달성하다"], ["attempt", "/əˈtempt/", "n:시도", "v:시도하다"],
+            ["attend", "/əˈtend/", "v:참석하다"], ["attendance", "/əˈten.dəns/", "n:출석"], ["attention", "/əˈten.ʃən/", "n:주목"], ["attitude", "/ˈæt.ɪ.tʃuːd/", "n:태도"], ["attorney", "/əˈtɜː.ni/", "n:변호사"],
+            ["attract", "/əˈtrækt/", "v:끌다"], ["attraction", "/əˈtræk.ʃən/", "n:명소, 매력"], ["attractive", "/əˈtræk.tɪv/", "adj:매력적인"], ["attribute", "/ˈæt.rɪ.bjuːt/", "v:~의 탓으로 돌리다", "n:속성"], ["auction", "/ˈɔːk.ʃən/", "n:경매"],
+            ["audience", "/ˈɔː.di.əns/", "n:청중"], ["audit", "/ˈɔː.dɪt/", "n:회계 감사"], ["authentic", "/ɔːˈθen.tɪk/", "adj:진짜의"], ["author", "/ˈɔː.θər/", "n:작가"], ["authority", "/ɔːˈθɒr.ə.ti/", "n:권위, 당국"],
+            ["authorize", "/ˈɔː.θər.aɪz/", "v:권한을 부여하다"], ["auto", "/ˈɔː.təʊ/", "n:자동차"], ["automatic", "/ˌɔː.təˈmæt.ɪk/", "adj:자동의"], ["autonomy", "/ɔːˈtɒn.ə.mi/", "n:자치권"], ["autumn", "/ˈɔː.təm/", "n:가을"],
+            ["availability", "/əˌveɪ.ləˈbɪl.ə.ti/", "n:유효성"], ["available", "/əˈveɪ.lə.bəl/", "adj:이용 가능한"], ["average", "/ˈæv.ər.ɪdʒ/", "adj:평균의"], ["avoid", "/əˈvɔɪd/", "v:피하다"], ["await", "/əˈweɪt/", "v:기다리다"],
+            ["award", "/əˈwɔːd/", "n:상", "v:수여하다"], ["aware", "/əˈweər/", "adj:알고 있는"], ["awareness", "/əˈweə.nəs/", "n:인식"], ["awful", "/ˈɔː.fəl/", "adj:끔찍한"], ["background", "/ˈbæk.ɡraʊnd/", "n:배경"],
+            ["backing", "/ˈbæk.ɪŋ/", "n:지원"], ["backup", "/ˈbæk.ʌp/", "n:지원, 예비"], ["backward", "/ˈbæk.wəd/", "adv:뒤로"], ["bacteria", "/bækˈtɪə.ri.ə/", "n:박테리아"], ["badly", "/ˈbæd.li/", "adv:나쁘게"],
+            ["bail", "/beɪl/", "n:보석금"], ["bake", "/beɪk/", "v:굽다"], ["balance", "/ˈbæl.əns/", "n:균형"], ["balanced", "/ˈbæl.ənst/", "adj:균형 잡힌"], ["ballot", "/ˈbæl.ət/", "n:투표"],
+            ["ban", "/bæn/", "v:금지하다", "n:금지"], ["band", "/bænd/", "n:밴드"], ["bank", "/bæŋk/", "n:은행"], ["banner", "/ˈbæn.ər/", "n:현수막"], ["bar", "/bɑːr/", "n:막대, 술집"],
+            ["bare", "/beər/", "adj:벌거벗은"], ["barely", "/ˈbeə.li/", "adv:간신히"], ["bargain", "/ˈbɑː.ɡɪn/", "n:흥정", "v:흥정하다"], ["barrel", "/ˈbær.əl/", "n:통"], ["barrier", "/ˈbær.i.ər/", "n:장벽"],
+            ["base", "/beɪs/", "n:기초"], ["basic", "/ˈbeɪ.sɪk/", "adj:기초적인"], ["basically", "/ˈbeɪ.sɪ.kəl.i/", "adv:기본적으로"], ["basis", "/ˈbeɪ.sɪs/", "n:기초, 근거"], ["battle", "/ˈbæt.əl/", "n:전투"],
+            ["battlefield", "/ˈbæt.əl.fiːld/", "n:전장"], ["bay", "/beɪ/", "n:만"], ["beam", "/biːm/", "n:빛줄기"], ["bear", "/beər/", "v:참다, 곰"], ["beast", "/biːst/", "n:짐승"],
+            ["beat", "/biːt/", "v:이기다, 때리다"], ["beautiful", "/ˈbjuː.tɪ.fəl/", "adj:아름다운"], ["beauty", "/ˈbjuː.ti/", "n:아름다움"], ["become", "/bɪˈkʌm/", "v:되다"], ["bed", "/bed/", "n:침대"],
+            ["beef", "/biːf/", "n:소고기"], ["before", "/bɪˈfɔːr/", "prep:전에"], ["beforehand", "/bɪˈfɔː.hænd/", "adv:사전에"], ["beg", "/beɡ/", "v:간청하다"], ["begin", "/bɪˈɡɪn/", "v:시작하다"],
+            ["beginning", "/bɪˈɡɪn.ɪŋ/", "n:시작"], ["behalf", "/bɪˈhɑːf/", "n:이익, 지지"], ["behave", "/bɪˈheɪv/", "v:행동하다"], ["behaviour", "/bɪˈheɪ.vjər/", "n:행동"], ["behind", "/bɪˈhaɪnd/", "prep:뒤에"],
+            ["being", "/ˈbiː.ɪŋ/", "n:존재"], ["belief", "/bɪˈliːf/", "n:믿음"], ["believe", "/bɪˈliːv/", "v:믿다"], ["bell", "/bel/", "n:종"], ["belong", "/bɪˈlɒŋ/", "v:속하다"],
+            ["beloved", "/bɪˈlʌv.ɪd/", "adj:사랑하는"], ["below", "/bɪˈləʊ/", "prep:아래에"], ["bench", "/bentʃ/", "n:벤치"], ["benchmark", "/ˈbentʃ.mɑːk/", "n:기준"], ["bend", "/bend/", "v:구부리다"],
+            ["beneath", "/bɪˈniːθ/", "prep:아래에"], ["beneficial", "/ˌben.ɪˈfɪʃ.əl/", "adj:유익한"], ["beneficiary", "/ˌben.əˈfɪʃ.ər.i/", "n:수혜자"], ["benefit", "/ˈben.ɪ.fɪt/", "n:이익", "v:이롭다"], ["beside", "/bɪˈsaɪd/", "prep:옆에"],
+            ["besides", "/bɪˈsaɪdz/", "adv:게다가"], ["best", "/best/", "adj:최고의"], ["bet", "/bet/", "v:내기하다"], ["betray", "/bɪˈtreɪ/", "v:배신하다"], ["better", "/ˈbet.ər/", "adj:더 좋은"],
+            ["between", "/bɪˈtwiːn/", "prep:사이에"], ["beyond", "/biˈjɒnd/", "prep:너머에"], ["bias", "/ˈbaɪ.əs/", "n:편견"], ["bid", "/bɪd/", "v:입찰하다", "n:입찰"], ["big", "/bɪɡ/", "adj:큰"],
+            ["bill", "/bɪl/", "n:청구서, 법안"], ["billion", "/ˈbɪl.jən/", "num:10억"], ["bind", "/baɪnd/", "v:묶다"], ["biography", "/baɪˈɒɡ.rə.fi/", "n:전기"], ["biological", "/ˌbaɪ.əˈlɒdʒ.ɪ.kəl/", "adj:생물학적인"],
+            ["biology", "/baɪˈɒl.ə.dʒi/", "n:생물학"], ["birth", "/bɜːθ/", "n:탄생"], ["bishop", "/ˈbɪʃ.əp/", "n:주교"], ["bit", "/bɪt/", "n:조금"], ["bite", "/baɪt/", "v:물다"],
+            ["bitter", "/ˈbɪt.ər/", "adj:쓴"], ["bizarre", "/bɪˈzɑːr/", "adj:기이한"], ["blame", "/bleɪm/", "v:비난하다"], ["blank", "/blæŋk/", "adj:빈"], ["blanket", "/ˈblæŋ.kɪt/", "n:담요"],
+            ["blast", "/blɑːst/", "n:폭발"], ["bleed", "/bliːd/", "v:피를 흘리다"], ["blend", "/blend/", "v:섞다"], ["bless", "/bles/", "v:축복하다"], ["blessing", "/ˈbles.ɪŋ/", "n:축복"],
+            ["blind", "/blaɪnd/", "adj:눈이 먼"], ["block", "/blɒk/", "n:블록", "v:막다"], ["blood", "/blʌd/", "n:피"], ["blow", "/bləʊ/", "v:불다"], ["blue", "/bluː/", "adj:파란"],
+            ["board", "/bɔːd/", "n:판, 위원회"], ["boast", "/bəʊst/", "v:뽐내다"], ["boat", "/bəʊt/", "n:배"], ["body", "/ˈbɒd.i/", "n:몸"], ["boil", "/bɔɪl/", "v:끓다"],
+            ["bold", "/bəʊld/", "adj:대담한"], ["bomb", "/bɒm/", "n:폭탄"], ["bombing", "/ˈbɒm.ɪŋ/", "n:폭격"], ["bond", "/bɒnd/", "n:유대"], ["bone", "/bəʊn/", "n:뼈"],
+            ["bonus", "/ˈbəʊ.nəs/", "n:보너스"], ["book", "/bʊk/", "n:책", "v:예약하다"], ["booking", "/ˈbʊk.ɪŋ/", "n:예약"], ["boom", "/buːm/", "n:호황"], ["boost", "/buːst/", "v:신장시키다"],
+            ["boot", "/buːt/", "n:부츠"], ["border", "/ˈbɔː.dər/", "n:국경"], ["bored", "/bɔːd/", "adj:지루해하는"], ["boring", "/ˈbɔː.rɪŋ/", "adj:지루한"], ["born", "/bɔːn/", "adj:태어난"],
+            ["borrow", "/ˈbɒr.əʊ/", "v:빌리다"], ["boss", "/bɒs/", "n:상사"], ["bother", "/ˈbɒð.ər/", "v:괴롭히다"], ["bottle", "/ˈbɒt.əl/", "n:병"], ["bottom", "/ˈbɒt.əm/", "n:바닥"],
+            ["bounce", "/baʊns/", "v:튀다"], ["bound", "/baʊnd/", "adj:얽매인"], ["boundary", "/ˈbaʊn.dər.i/", "n:경계"], ["bow", "/baʊ/", "v:절하다"], ["bowl", "/bəʊl/", "n:그릇"],
+            ["box", "/bɒks/", "n:상자"], ["boy", "/bɔɪ/", "n:소년"], ["brain", "/breɪn/", "n:뇌"], ["branch", "/brɑːntʃ/", "n:나뭇가지, 지점"], ["brand", "/brænd/", "n:상표"],
+            ["brave", "/breɪv/", "adj:용감한"], ["breach", "/briːtʃ/", "n:위반"], ["bread", "/bred/", "n:빵"], ["break", "/breɪk/", "v:깨다, 휴식"], ["breakdown", "/ˈbreɪk.daʊn/", "n:고장"],
+            ["breakfast", "/ˈbrek.fəst/", "n:아침식사"], ["breakthrough", "/ˈbreɪk.θruː/", "n:돌파구"], ["breast", "/brest/", "n:가슴"], ["breath", "/breθ/", "n:숨"], ["breathe", "/briːð/", "v:숨쉬다"],
+            ["breathing", "/ˈbriː.ðɪŋ/", "n:호흡"], ["breed", "/briːd/", "v:사육하다"], ["brick", "/brɪk/", "n:벽돌"], ["bride", "/braɪd/", "n:신부"], ["bridge", "/brɪdʒ/", "n:다리"],
+            ["brief", "/briːf/", "adj:짧은"], ["briefly", "/ˈbriːf.li/", "adv:잠시"], ["bright", "/braɪt/", "adj:밝은"], ["brilliant", "/ˈbrɪl.jənt/", "adj:훌륭한"], ["bring", "/brɪŋ/", "v:가져오다"],
+            ["broad", "/brɔːd/", "adj:넓은"], ["broadband", "/ˈbrɔːd.bænd/", "n:광대역"], ["broadcast", "/ˈbrɔːd.kɑːst/", "v:방송하다"], ["broadcaster", "/ˈbrɔːdˌkɑː.stər/", "n:방송인"], ["broadly", "/ˈbrɔːd.li/", "adv:널리"],
+            ["broken", "/ˈbrəʊ.kən/", "adj:부서진"], ["broker", "/ˈbrəʊ.kər/", "n:중개인"], ["bronze", "/brɒnz/", "n:청동"], ["brother", "/ˈbrʌð.ər/", "n:형제"], ["brown", "/braʊn/", "adj:갈색의"],
+            ["browse", "/braʊz/", "v:둘러보다"], ["browser", "/ˈbraʊ.zər/", "n:브라우저"], ["brush", "/brʌʃ/", "n:솔", "v:솔질하다"], ["bubble", "/ˈbʌb.əl/", "n:거품"], ["buck", "/bʌk/", "n:달러 (속어)"],
+            ["bucket", "/ˈbʌk.ɪt/", "n:양동이"], ["buddy", "/ˈbʌd.i/", "n:친구"], ["budget", "/ˈbʌdʒ.ɪt/", "n:예산"], ["buffer", "/ˈbʌf.ər/", "n:완충제"], ["bug", "/bʌɡ/", "n:벌레"],
+            ["build", "/bɪld/", "v:짓다"], ["builder", "/ˈbɪl.dər/", "n:건축업자"], ["building", "/ˈbɪl.dɪŋ/", "n:건물"], ["bulk", "/bʌlk/", "n:대부분, 대량"], ["bull", "/bʊl/", "n:황소"],
+            ["bullet", "/ˈbʊl.ɪt/", "n:총알"], ["bunch", "/bʌntʃ/", "n:다발"], ["burden", "/ˈbɜː.dən/", "n:짐"], ["bureau", "/ˈbjʊə.rəʊ/", "n:책상, 사무실"], ["burn", "/bɜːn/", "v:타다"],
+            ["burning", "/ˈbɜː.nɪŋ/", "adj:타는 듯한"], ["burst", "/bɜːst/", "v:터지다"], ["bury", "/ˈberi/", "v:묻다"], ["bus", "/bʌs/", "n:버스"], ["bush", "/bʊʃ/", "n:덤불"],
+            ["business", "/ˈbɪz.nɪs/", "n:사업"], ["businessman", "/ˈbɪz.nɪs.mæn/", "n:사업가"], ["busy", "/ˈbɪz.i/", "adj:바쁜"], ["but", "/bʌt/", "conj:그러나"], ["butter", "/ˈbʌt.ər/", "n:버터"],
+            ["button", "/ˈbʌt.ən/", "n:단추"], ["buy", "/baɪ/", "v:사다"], ["buyer", "/ˈbaɪ.ər/", "n:구매자"], ["by", "/baɪ/", "prep:의해"], ["cabin", "/ˈkæb.ɪn/", "n:오두막"],
+            ["cabinet", "/ˈkæb.ɪ.nət/", "n:캐비닛"], ["cable", "/ˈkeɪ.bəl/", "n:케이블"], ["cafe", "/ˈkæf.eɪ/", "n:카페"], ["cage", "/keɪdʒ/", "n:새장"], ["cake", "/keɪk/", "n:케이크"],
+            ["calculate", "/ˈkæl.kjə.leɪt/", "v:계산하다"], ["calculation", "/ˌkæl.kjəˈleɪ.ʃən/", "n:계산"], ["call", "/kɔːl/", "v:부르다"], ["calm", "/kɑːm/", "adj:차분한"], ["camera", "/ˈkæm.rə/", "n:카메라"],
+            ["camp", "/kæmp/", "n:캠프"], ["campaign", "/kæmˈpeɪn/", "n:캠페인"], ["camping", "/ˈkæm.pɪŋ/", "n:캠핑"], ["campus", "/ˈkæm.pəs/", "n:캠퍼스"], ["can", "/kæn/", "v:할 수 있다"],
+            ["canal", "/kəˈnæl/", "n:운하"], ["cancel", "/ˈkæn.səl/", "v:취소하다"], ["cancer", "/ˈkæn.sər/", "n:암"], ["candidate", "/ˈkæn.dɪ.dət/", "n:후보자"], ["candle", "/ˈkæn.dəl/", "n:양초"],
+            ["candy", "/ˈkæn.di/", "n:사탕"], ["canvas", "/ˈkæn.vəs/", "n:캔버스"], ["cap", "/kæp/", "n:모자"], ["capability", "/ˌkeɪ.pəˈbɪl.ə.ti/", "n:능력"], ["capable", "/ˈkeɪ.pə.bəl/", "adj:유능한"],
+            ["capacity", "/kəˈpæs.ə.ti/", "n:용량"], ["capital", "/ˈkæp.ɪ.təl/", "n:수도, 자본"], ["capitalism", "/ˈkæp.ɪ.təl.ɪ.zəm/", "n:자본주의"], ["capitalist", "/ˈkæp.ɪ.təl.ɪst/", "n:자본가"], ["captain", "/ˈkæp.tɪn/", "n:선장"],
+            ["caption", "/ˈkæp.ʃən/", "n:캡션"], ["capture", "/ˈkæp.tʃər/", "v:포획하다"], ["car", "/kɑːr/", "n:자동차"], ["carbon", "/ˈkɑː.bən/", "n:탄소"], ["card", "/kɑːd/", "n:카드"],
+            ["care", "/keər/", "n:돌봄"], ["career", "/kəˈrɪər/", "n:경력"], ["careful", "/ˈkeə.fəl/", "adj:조심스러운"], ["carefully", "/ˈkeə.fəl.i/", "adv:조심스럽게"], ["careless", "/ˈkeə.ləs/", "adj:부주의한"],
+            ["cargo", "/ˈkɑː.ɡəʊ/", "n:화물"], ["carpet", "/ˈkɑː.pɪt/", "n:카펫"], ["carriage", "/ˈkær.ɪdʒ/", "n:마차"], ["carrier", "/ˈkær.i.ər/", "n:운송 회사"], ["carrot", "/ˈkær.ət/", "n:당근"],
+            ["carry", "/ˈkær.i/", "v:나르다"], ["cart", "/kɑːt/", "n:수레"], ["cartoon", "/kɑːˈtuːn/", "n:만화"], ["carve", "/kɑːv/", "v:조각하다"], ["case", "/keɪs/", "n:경우"],
+            ["cash", "/kæʃ/", "n:현금"], ["casino", "/kəˈsiː.nəʊ/", "n:카지노"], ["cast", "/kɑːst/", "v:던지다"], ["castle", "/ˈkɑː.səl/", "n:성"], ["casual", "/ˈkæʒ.ju.əl/", "adj:격식 없는"],
+            ["casualty", "/ˈkæʒ.ju.əl.ti/", "n:사상자"], ["cat", "/kæt/", "n:고양이"], ["catalogue", "/ˈkæt.əl.ɒɡ/", "n:목록"], ["catch", "/kætʃ/", "v:잡다"], ["category", "/ˈkæt.ə.ɡri/", "n:범주"],
+            ["cater", "/ˈkeɪ.tər/", "v:음식을 공급하다"], ["cattle", "/ˈkæt.əl/", "n:소"], ["cause", "/kɔːz/", "n:원인"], ["caution", "/ˈkɔː.ʃən/", "n:주의"], ["cautious", "/ˈkɔː.ʃəs/", "adj:조심스러운"],
+            ["cave", "/keɪv/", "n:동굴"], ["cd", "/ˌsiːˈdiː/", "n:CD"], ["cease", "/siːs/", "v:중단하다"], ["ceiling", "/ˈsiː.lɪŋ/", "n:천장"], ["celebrate", "/ˈsel.ə.breɪt/", "v:축하하다"],
+            ["celebration", "/ˌsel.əˈbreɪ.ʃən/", "n:축하"], ["celebrity", "/səˈleb.rə.ti/", "n:유명인"], ["cell", "/sel/", "n:세포"], ["cellar", "/ˈsel.ər/", "n:지하실"], ["cemetery", "/ˈsem.ə.tri/", "n:묘지"],
+            ["cent", "/sent/", "n:센트"], ["center", "/ˈsen.tər/", "n:중심"], ["central", "/ˈsen.trəl/", "adj:중심의"], ["centre", "/ˈsen.tər/", "n:중심"], ["century", "/ˈsen.tʃər.i/", "n:세기"],
+            ["ceremony", "/ˈser.ɪ.mə.ni/", "n:의식"], ["certain", "/ˈsɜː.tən/", "adj:확실한"], ["certainly", "/ˈsɜː.tən.li/", "adv:확실히"], ["certainty", "/ˈsɜː.tən.ti/", "n:확실성"], ["certificate", "/səˈtɪf.ɪ.kət/", "n:증명서"],
+            ["chain", "/tʃeɪn/", "n:사슬"], ["chair", "/tʃeər/", "n:의자"], ["chairman", "/ˈtʃeə.mən/", "n:의장"], ["chairwoman", "/ˈtʃeəˌwʊm.ən/", "n:여성 의장"], ["challenge", "/ˈtʃæl.ɪndʒ/", "n:도전"],
+            ["chamber", "/ˈtʃeɪm.bər/", "n:방"], ["champion", "/ˈtʃæm.pi.ən/", "n:챔피언"], ["championship", "/ˈtʃæm.pi.ən.ʃɪp/", "n:선수권 대회"], ["chance", "/tʃɑːns/", "n:기회"], ["change", "/tʃeɪndʒ/", "v:바꾸다"],
+            ["channel", "/ˈtʃæn.əl/", "n:채널"], ["chaos", "/ˈkeɪ.ɒs/", "n:혼란"], ["chapter", "/ˈtʃæp.tər/", "n:장"], ["character", "/ˈkær.ək.tər/", "n:성격"], ["characteristic", "/ˌkær.ək.təˈrɪs.tɪk/", "n:특징"],
+            ["characterize", "/ˈkær.ək.tə.raɪz/", "v:특징짓다"], ["charge", "/tʃɑːdʒ/", "n:요금"], ["charity", "/ˈtʃær.ə.ti/", "n:자선"], ["charm", "/tʃɑːm/", "n:매력"], ["charming", "/ˈtʃɑː.mɪŋ/", "adj:매력적인"],
+            ["chart", "/tʃɑːt/", "n:도표"], ["charter", "/ˈtʃɑː.tər/", "n:헌장"], ["chase", "/tʃeɪs/", "v:뒤쫓다"], ["chat", "/tʃæt/", "v:수다떨다"], ["cheap", "/tʃiːp/", "adj:싼"],
+            ["cheat", "/tʃiːt/", "v:속이다"], ["check", "/tʃek/", "v:확인하다"], ["cheek", "/tiːk/", "n:뺨"], ["cheer", "/tʃɪər/", "v:응원하다"], ["cheerful", "/ˈtʃɪə.fəl/", "adj:발랄한"],
+            ["cheese", "/tʃiːz/", "n:치즈"], ["chef", "/ʃef/", "n:요리사"], ["chemical", "/ˈkem.ɪ.kəl/", "adj:화학의"], ["chemistry", "/ˈkem.ɪ.stri/", "n:화학"], ["cheque", "/tʃek/", "n:수표"],
+            ["chest", "/tʃest/", "n:가슴"], ["chicken", "/ˈtʃɪk.ɪn/", "n:닭"], ["chief", "/tʃiːf/", "adj:주요한"], ["child", "/tʃaɪld/", "n:아이"], ["childhood", "/ˈtʃaɪld.hʊd/", "n:어린 시절"],
+            ["chip", "/tʃɪp/", "n:조각"], ["chocolate", "/ˈtʃɒk.lət/", "n:초콜릿"], ["choice", "/tʃɔɪs/", "n:선택"], ["choir", "/kwaɪər/", "n:합창단"], ["choose", "/tʃuːz/", "v:선택하다"],
+            ["chop", "/tʃɒp/", "v:자르다"], ["chronic", "/ˈkrɒn.ɪk/", "adj:만성적인"], ["chunk", "/tʃʌŋk/", "n:덩어리"], ["church", "/tʃɜːtʃ/", "n:교회"], ["cigarette", "/ˌsɪɡ.ərˈet/", "n:담배"],
+            ["cinema", "/ˈsɪn.ə.mə/", "n:영화관"], ["circle", "/ˈsɜː.kəl/", "n:원"], ["circuit", "/ˈsɜː.kɪt/", "n:회로"], ["circulate", "/ˈsɜː.kjə.leɪt/", "v:순환하다"], ["circulation", "/ˌsɜː.kjəˈleɪ.ʃən/", "n:순환"],
+            ["circumstance", "/ˈsɜː.kəm.stɑːns/", "n:상황"], ["circus", "/ˈsɜː.kəs/", "n:서커스"], ["cite", "/saɪt/", "v:인용하다"], ["citizen", "/ˈsɪt.ɪ.zən/", "n:시민"], ["citizenship", "/ˈsɪt.ɪ.zən.ʃɪp/", "n:시민권"],
+            ["city", "/ˈsɪt.i/", "n:도시"], ["civic", "/ˈsɪv.ɪk/", "adj:시민의"], ["civil", "/ˈsɪv.əl/", "adj:시민의"], ["civilian", "/sɪˈvɪl.jən/", "n:민간인"], ["civilization", "/ˌsɪv.əl.aɪˈzeɪ.ʃən/", "n:문명"]
+        ];
+
+        // --- State Management ---
+        let vocabData = [];
+        let currentIndex = 0;
+        let learnedMap = JSON.parse(localStorage.getItem('b2_vocab_levels')) || {};
+        let filteredIndices = [];
+        let isFilteredMode = true; 
+        let searchTerm = "";
+
+        // --- Initialization ---
+        window.onload = function() {
+            parseVocabData();
+            
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('header-title').textContent = `B2 라이트너 (${vocabData.length})`;
+                updateFilteredIndices();
+                renderCard();
+                updateProgress();
+                renderList();
+            }, 500);
+        };
+
+        // --- Core Functions ---
+
+        function parseVocabData() {
+            vocabData = rawVocabData.map((item, index) => {
+                const meanings = item.slice(2).map(m => {
+                    const splitIndex = m.indexOf(':');
+                    const pos = m.substring(0, splitIndex);
+                    const k = m.substring(splitIndex + 1);
+                    return { pos, k };
+                });
+                return {
+                    id: index + 1,
+                    word: item[0],
+                    phonetic: item[1],
+                    meanings: meanings
+                };
+            });
+            document.getElementById('loading-count').textContent = `${vocabData.length}개 B2 데이터 로드됨`;
+        }
+        
+        function updateFilteredIndices() {
+            if (isFilteredMode) {
+                filteredIndices = vocabData
+                    .map((_, index) => index)
+                    .filter(index => {
+                        const level = learnedMap[vocabData[index].id] || 0;
+                        return level < 3; 
+                    });
+                
+                if (filteredIndices.length === 0 && vocabData.length > 0) {
+                   alert("대단합니다! 모든 B2 단어를 마스터(3단계) 하셨습니다! 전체 복습을 위해 필터를 해제합니다.");
+                   document.getElementById('hide-mastered').checked = false;
+                   isFilteredMode = false;
+                   filteredIndices = vocabData.map((_, index) => index);
+                }
+            } else {
+                filteredIndices = vocabData.map((_, index) => index);
+            }
+            
+            if (currentIndex >= filteredIndices.length) currentIndex = 0;
+        }
+
+        function getCurrentWordData() {
+            if (filteredIndices.length === 0) return null;
+            const realIndex = filteredIndices[currentIndex];
+            return vocabData[realIndex];
+        }
+
+        function getLevel(id) {
+            return learnedMap[id] || 0;
+        }
+
+        function renderCard() {
+            const card = document.getElementById('flashcard');
+            const data = getCurrentWordData();
+            
+            card.classList.remove('flipped');
+
+            if (!data) {
+                document.getElementById('card-word').textContent = "완료!";
+                document.getElementById('card-word-back').textContent = "End";
+                return;
+            }
+
+            const level = getLevel(data.id);
+
+            const indicator = document.getElementById('level-indicator-front');
+            indicator.innerHTML = '';
+            for(let i=0; i<3; i++) {
+                const dot = document.createElement('div');
+                dot.className = `step-dot ${i < level ? getColorForLevel(level) : ''}`;
+                indicator.appendChild(dot);
+            }
+
+            const frontFace = document.getElementById('card-front-border');
+            frontFace.style.borderColor = getBorderColor(level);
+
+            document.getElementById('card-word').textContent = data.word;
+            
+            document.getElementById('card-word-back').textContent = data.word;
+            document.getElementById('card-phonetic').textContent = data.phonetic || "";
+            
+            const meaningsContainer = document.getElementById('meanings-container');
+            meaningsContainer.innerHTML = '';
+
+            data.meanings.forEach(m => {
+                const row = document.createElement('div');
+                row.className = "flex gap-3 border-b border-gray-100 pb-2 last:border-0";
+                
+                const posBadge = document.createElement('span');
+                posBadge.className = `px-2 py-1 rounded text-xs font-bold h-fit whitespace-nowrap ${getPosColor(m.pos)}`;
+                posBadge.textContent = getPosKorean(m.pos);
+                
+                const defText = document.createElement('p');
+                defText.className = "text-gray-700 text-sm leading-relaxed";
+                defText.textContent = m.k;
+
+                row.appendChild(posBadge);
+                row.appendChild(defText);
+                meaningsContainer.appendChild(row);
+            });
+
+            document.getElementById('counter-text').textContent = `${currentIndex + 1} / ${filteredIndices.length}`;
+        }
+
+        function getColorForLevel(level) {
+            if (level === 1) return 'bg-yellow-400';
+            if (level === 2) return 'bg-blue-400';
+            if (level === 3) return 'bg-green-500';
+            return 'bg-gray-200';
+        }
+
+        function getBorderColor(level) {
+            if (level === 1) return '#FBBF24'; // Yellow
+            if (level === 2) return '#60A5FA'; // Blue
+            if (level === 3) return '#34D399'; // Green
+            return '#E5E7EB'; // Gray
+        }
+
+        function getPosColor(pos) {
+            switch(pos) {
+                case 'n': return 'bg-blue-100 text-blue-700';
+                case 'v': return 'bg-red-100 text-red-700';
+                case 'adj': return 'bg-yellow-100 text-yellow-700';
+                case 'adv': return 'bg-purple-100 text-purple-700';
+                default: return 'bg-gray-200 text-gray-700';
+            }
+        }
+
+        function getPosKorean(pos) {
+            const map = {
+                'n': '명사', 'v': '동사', 'adj': '형용사', 'adv': '부사',
+                'num': '수사', 'prep': '전치사', 'int': '감탄사', 'pron': '대명사',
+                'det': '한정사', 'conj': '접속사'
+            };
+            return map[pos] || pos;
+        }
+
+        function flipCard() {
+            const card = document.getElementById('flashcard');
+            card.classList.toggle('flipped');
+        }
+
+        function updateProficiency(change) {
+            const data = getCurrentWordData();
+            if (!data) return;
+
+            let currentLevel = learnedMap[data.id] || 0;
+            
+            let newLevel = currentLevel + change;
+            if (newLevel < 0) newLevel = 0;
+            if (newLevel > 3) newLevel = 3;
+
+            learnedMap[data.id] = newLevel;
+            localStorage.setItem('b2_vocab_levels', JSON.stringify(learnedMap));
+
+            updateProgress();
+            renderList();
+
+            if (isFilteredMode && newLevel === 3) {
+                 setTimeout(() => {
+                    updateFilteredIndices();
+                    renderCard();
+                 }, 300);
+            } else {
+                nextCard();
+            }
+        }
+
+        function nextCard() {
+            if (filteredIndices.length === 0) return;
+            currentIndex = (currentIndex + 1) % filteredIndices.length;
+            renderCard();
+        }
+
+        function prevCard() {
+            if (filteredIndices.length === 0) return;
+            currentIndex = (currentIndex - 1 + filteredIndices.length) % filteredIndices.length;
+            renderCard();
+        }
+
+        function toggleFilter() {
+            isFilteredMode = document.getElementById('hide-mastered').checked;
+            currentIndex = 0;
+            updateFilteredIndices();
+            renderCard();
+        }
+
+        function playAudio() {
+            const data = getCurrentWordData();
+            if (!data) return;
+            const utterance = new SpeechSynthesisUtterance(data.word);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function updateProgress() {
+            if (vocabData.length === 0) return;
+            
+            const masteredCount = Object.values(learnedMap).filter(l => l === 3).length;
+            const percentage = Math.round((masteredCount / vocabData.length) * 100);
+            document.getElementById('progress-text').textContent = `${percentage}%`;
+        }
+        
+        function switchTab(tab) {
+            const btnStudy = document.getElementById('tab-study');
+            const btnList = document.getElementById('tab-list');
+            const viewStudy = document.getElementById('view-study');
+            const viewList = document.getElementById('view-list');
+
+            if (tab === 'study') {
+                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all";
+                btnList.className = "flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all";
+                viewStudy.classList.remove('hidden');
+                viewStudy.classList.add('flex');
+                
+                viewList.classList.add('hidden');
+                viewList.classList.remove('flex');
+                renderCard(); 
+            } else {
+                btnList.className = "flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all";
+                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all";
+                viewList.classList.remove('hidden');
+                viewList.classList.add('flex');
+                
+                viewStudy.classList.add('hidden');
+                viewStudy.classList.remove('flex');
+                renderList();
+            }
+        }
+
+        function filterList() {
+            searchTerm = document.getElementById('search-input').value.toLowerCase();
+            renderList();
+        }
+
+        function renderList() {
+            const container = document.getElementById('word-list-container');
+            container.innerHTML = '';
+
+            const filteredList = vocabData.filter(item => item.word.toLowerCase().includes(searchTerm));
+
+            if (filteredList.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            const displayList = filteredList.slice(0, 100); 
+
+            displayList.forEach(item => {
+                const level = getLevel(item.id);
+                
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:border-indigo-300 transition-all cursor-pointer flex justify-between items-center group";
+                div.onclick = () => {
+                   isFilteredMode = false;
+                   document.getElementById('hide-mastered').checked = false;
+                   updateFilteredIndices();
+                   currentIndex = filteredIndices.indexOf(vocabData.indexOf(item));
+                   switchTab('study');
+                };
+
+                let levelBadge = '';
+                if (level === 0) levelBadge = '<span class="text-[10px] text-gray-400 border border-gray-200 px-2 py-0.5 rounded">시작 전</span>';
+                else if (level === 1) levelBadge = '<span class="text-[10px] text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded font-bold">학습 중</span>';
+                else if (level === 2) levelBadge = '<span class="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded font-bold">복습 필요</span>';
+                else if (level === 3) levelBadge = '<span class="text-[10px] text-green-600 bg-green-100 px-2 py-0.5 rounded font-bold">마스터</span>';
+
+                const content = `
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-lg eng-font text-gray-800">${item.word}</span>
+                            <span class="text-xs text-gray-400 font-mono">${item.phonetic || ''}</span>
+                            <span class="ml-auto">${levelBadge}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 flex flex-wrap gap-y-1">
+                            ${item.meanings.map(m => `<span class="mr-3 flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-gray-300 mr-1.5"></span><span class="font-bold text-gray-400 mr-1">${m.pos}.</span> ${m.k}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+                div.innerHTML = content;
+                container.appendChild(div);
+            });
+            
+            if (filteredList.length > 100) {
+                const moreDiv = document.createElement('div');
+                moreDiv.className = "text-center text-xs text-gray-400 py-2";
+                moreDiv.textContent = `...외 ${filteredList.length - 100}개 결과`;
+                container.appendChild(moreDiv);
+            }
+        }
+
+        function resetAllData() {
+            if(confirm('모든 B2 학습 기록을 초기화 하시겠습니까?\n(주의: 모든 진행 상황이 삭제됩니다)')) {
+                learnedMap = {};
+                localStorage.removeItem('b2_vocab_levels');
+                
+                searchTerm = "";
+                document.getElementById('search-input').value = "";
+                
+                isFilteredMode = true;
+                document.getElementById('hide-mastered').checked = true;
+                
+                currentIndex = 0;
+
+                updateProgress();
+                updateFilteredIndices();
+                renderCard();
+                renderList();
+                
+                alert("초기화되었습니다.");
+            }
+        }
+    </script>
+</body>
+</html>
