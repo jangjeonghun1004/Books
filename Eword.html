@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>영단어 마스터 - 레벨 선택</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .eng-font {
+            font-family: 'Poppins', sans-serif;
+        }
+        .level-card {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .level-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Hover Effect */
+        .level-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 bg-opacity-90 backdrop-blur-md">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold eng-font text-lg shadow-lg">
+                    V
+                </div>
+                <h1 class="text-xl font-bold text-gray-800 tracking-tight">Vocab Master</h1>
+            </div>
+            <span class="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">CEFR Levels</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-5xl mx-auto px-4 py-8 w-full">
+        
+        <!-- Intro Text -->
+        <div class="text-center mb-10 space-y-2">
+            <h2 class="text-3xl md:text-4xl font-black text-gray-900 leading-tight">
+                나의 <span class="text-indigo-600">영어 레벨</span>에<br class="md:hidden"/> 맞춰 시작하세요
+            </h2>
+            <p class="text-gray-500 text-sm md:text-base break-keep">
+                유럽 공통 언어 기준(CEFR)에 따른 6단계 필수 영단어장입니다.<br class="hidden md:inline"/> 자신의 실력에 맞는 단계를 선택하여 학습을 시작해보세요.
+            </p>
+        </div>
+
+        <!-- Grid Container -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="card-grid">
+            
+            <!-- A1 Card -->
+            <a href="https://jangjeonghun1004.github.io/Books/EwordA1.html" class="level-card group block bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-green-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-4 shadow-green-200 shadow-lg eng-font">A1</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">기초 입문 (Beginner)</h3>
+                    <p class="text-sm text-gray-500 mb-4 h-10">영어 학습의 첫걸음, 가장 기초적인 필수 단어 900개</p>
+                    <div class="flex items-center text-green-600 text-sm font-bold group-hover:translate-x-1 transition-transform">
+                        학습하기 
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- A2 Card -->
+            <a href="https://jangjeonghun1004.github.io/Books/EwordA2.html" class="level-card group block bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-teal-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-4 shadow-teal-200 shadow-lg eng-font">A2</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">기본 단계 (Elementary)</h3>
+                    <p class="text-sm text-gray-500 mb-4 h-10">일상적인 대화와 표현을 위한 필수 어휘 확장</p>
+                    <div class="flex items-center text-teal-600 text-sm font-bold group-hover:translate-x-1 transition-transform">
+                        학습하기 
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- B1 Card -->
+            <a href="https://jangjeonghun1004.github.io/Books/EwordB1.html" class="level-card group block bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-blue-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-4 shadow-blue-200 shadow-lg eng-font">B1</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">중급 도약 (Intermediate)</h3>
+                    <p class="text-sm text-gray-500 mb-4 h-10">다양한 주제에 대해 의견을 표현하는 실력 양성</p>
+                    <div class="flex items-center text-blue-600 text-sm font-bold group-hover:translate-x-1 transition-transform">
+                        학습하기 
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- B2 Card -->
+            <a href="https://jangjeonghun1004.github.io/Books/EwordB2.html" class="level-card group block bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-4 shadow-indigo-200 shadow-lg eng-font">B2</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">중상급 (Upper Intermediate)</h3>
+                    <p class="text-sm text-gray-500 mb-4 h-10">유창한 의사소통과 복잡한 텍스트 이해</p>
+                    <div class="flex items-center text-indigo-600 text-sm font-bold group-hover:translate-x-1 transition-transform">
+                        학습하기 
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- C1 Card -->
+            <a href="https://jangjeonghun1004.github.io/Books/EwordC1.html" class="level-card group block bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-purple-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-4 shadow-purple-200 shadow-lg eng-font">C1</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">고급 (Advanced)</h3>
+                    <p class="text-sm text-gray-500 mb-4 h-10">전문적이고 학술적인 수준의 어휘 구사</p>
+                    <div class="flex items-center text-purple-600 text-sm font-bold group-hover:translate-x-1 transition-transform">
+                        학습하기 
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- C2 Card -->
+            <a href="https://jangjeonghun1004.github.io/Books/EwordC2.html" class="level-card group block bg-white rounded-2xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-rose-100 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-rose-500 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-4 shadow-rose-200 shadow-lg eng-font">C2</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">최상급 (Proficiency)</h3>
+                    <p class="text-sm text-gray-500 mb-4 h-10">원어민 수준의 정교하고 미묘한 의미 파악</p>
+                    <div class="flex items-center text-rose-600 text-sm font-bold group-hover:translate-x-1 transition-transform">
+                        학습하기 
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12 py-8">
+        <div class="max-w-5xl mx-auto px-4 text-center">
+            <p class="text-gray-400 text-sm">© 2024 English Vocabulary Master. All rights reserved.</p>
+            <p class="text-gray-300 text-xs mt-2">Designed for efficient learning.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Entry Animation
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.level-card');
+            
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('show');
+                }, index * 100); // 100ms staggered delay
+            });
+        });
+    </script>
+</body>
+</html>
