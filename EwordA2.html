@@ -2,18 +2,22 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A2 영단어 마스터 (라이트너 시스템)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A2 영단어 마스터 (오류 수정됨)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* 모바일 스크롤 바운스 방지 및 폰트 설정 */
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #f3f4f6;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .eng-font {
             font-family: 'Poppins', sans-serif;
         }
+        /* 3D 카드 효과 */
         .card-container {
             perspective: 1000px;
         }
@@ -21,11 +25,17 @@
             position: relative;
             width: 100%;
             transform-style: preserve-3d;
-            transition: transform 0.6s;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
             cursor: pointer;
+        }
+        .card:active {
+            transform: scale(0.98);
         }
         .card.flipped {
             transform: rotateY(180deg);
+        }
+        .card.flipped:active {
+            transform: rotateY(180deg) scale(0.98);
         }
         .card-face {
             position: absolute;
@@ -33,8 +43,8 @@
             height: 100%;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -55,9 +65,9 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        /* Loading Spinner */
+        /* 로딩 스피너 */
         .loader {
-            border: 4px solid #f3f3f3;
+            border: 4px solid #e5e7eb;
             border-top: 4px solid #4f46e5;
             border-radius: 50%;
             width: 40px;
@@ -68,50 +78,50 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* Proficiency Steps */
+        /* 숙련도 점 */
         .step-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background-color: #e5e7eb;
             transition: all 0.3s ease;
         }
         .step-dot.active {
-            transform: scale(1.2);
+            transform: scale(1.3);
         }
     </style>
 </head>
-<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
+<body class="text-gray-800 h-[100dvh] flex flex-col overflow-hidden select-none bg-gray-100">
 
     <!-- Header -->
-    <header class="bg-indigo-600 text-white p-4 shadow-md z-10 shrink-0">
+    <header class="bg-indigo-600 text-white p-3 shadow-md z-10 shrink-0">
         <div class="max-w-md mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            <h1 class="text-lg font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
-                <span id="header-title">A2 라이트너 학습기</span>
+                <span id="header-title">A2 라이트너</span>
             </h1>
-            <div class="text-xs font-medium bg-indigo-700 px-3 py-1 rounded-full">
+            <div class="text-[11px] font-medium bg-indigo-700/50 px-2.5 py-1 rounded-full border border-indigo-500">
                 마스터: <span id="progress-text">0%</span>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col p-4 w-full max-w-md mx-auto relative overflow-hidden">
+    <main class="flex-1 flex flex-col p-3 w-full max-w-md mx-auto relative overflow-hidden">
         
         <!-- Loading Screen -->
         <div id="loading-screen" class="absolute inset-0 bg-gray-100 z-50 flex flex-col items-center justify-center">
             <div class="loader mb-4"></div>
-            <p class="text-gray-600 font-medium">A2 데이터 로딩 중...</p>
+            <p class="text-gray-600 font-medium">A2 데이터 복구 중...</p>
             <p class="text-xs text-gray-400 mt-2" id="loading-count"></p>
         </div>
 
         <!-- Tab Navigation -->
-        <div class="flex w-full bg-gray-200 rounded-lg p-1 mb-4 shrink-0">
-            <button id="tab-study" onclick="switchTab('study')" class="flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all">학습 모드</button>
-            <button id="tab-list" onclick="switchTab('list')" class="flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all">전체 목록</button>
+        <div class="flex w-full bg-gray-200/80 p-1 mb-3 shrink-0 rounded-xl">
+            <button id="tab-study" onclick="switchTab('study')" class="flex-1 py-2 text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all">학습</button>
+            <button id="tab-list" onclick="switchTab('list')" class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all">목록</button>
         </div>
 
         <!-- Study Mode View -->
@@ -119,80 +129,82 @@
             
             <!-- Filter Options -->
             <div class="flex justify-between items-center mb-2 px-1 shrink-0">
-                <span class="text-sm text-gray-500" id="counter-text">1 / --</span>
-                <label class="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer">
-                    <input type="checkbox" id="hide-mastered" class="form-checkbox text-indigo-600 rounded" onchange="toggleFilter()" checked>
-                    <span>마스터 제외하고 보기</span>
+                <span class="text-xs font-mono text-gray-400" id="counter-text">1 / --</span>
+                <label class="flex items-center space-x-2 text-xs text-gray-600 cursor-pointer active:opacity-70 transition-opacity">
+                    <input type="checkbox" id="hide-mastered" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" onchange="toggleFilter()" checked>
+                    <span>마스터 제외</span>
                 </label>
             </div>
 
             <!-- Flashcard Area -->
-            <div class="card-container w-full flex-1 relative mb-4 min-h-0">
+            <div class="card-container w-full flex-1 relative mb-3 min-h-0">
                 <div class="card w-full h-full" id="flashcard" onclick="flipCard()">
                     
                     <!-- Front -->
-                    <div class="card-face p-6 border-b-4 border-gray-200 transition-colors" id="card-front-border">
-                        <div class="w-full flex justify-between items-start absolute top-6 px-6">
-                            <span class="text-xs font-bold text-gray-400 tracking-widest uppercase">Question</span>
-                            <div class="flex gap-1" id="level-indicator-front">
+                    <div class="card-face p-6 border-b-4 border-gray-200" id="card-front-border">
+                        <div class="w-full flex justify-between items-start absolute top-5 px-5">
+                            <span class="text-[10px] font-bold text-gray-300 tracking-[0.2em] uppercase">WORD</span>
+                            <div class="flex gap-1.5" id="level-indicator-front">
                                 <!-- Dots injected by JS -->
                             </div>
                         </div>
 
-                        <h2 id="card-word" class="text-5xl font-bold text-gray-800 eng-font mb-4 text-center mt-4">Loading</h2>
+                        <!-- Responsive Text Size -->
+                        <h2 id="card-word" class="text-4xl md:text-5xl font-bold text-gray-800 eng-font mb-4 text-center mt-4 break-words w-full px-2">Loading</h2>
                         
-                        <button onclick="event.stopPropagation(); playAudio()" class="mt-2 p-3 bg-gray-50 rounded-full hover:bg-gray-100 text-indigo-600 transition-colors shadow-sm" title="발음 듣기">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <!-- Bigger Touch Target for Audio -->
+                        <button onclick="event.stopPropagation(); playAudio()" class="mt-4 p-4 bg-gray-50 rounded-full hover:bg-gray-100 active:bg-gray-200 text-indigo-600 transition-colors shadow-sm" title="발음 듣기">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                             </svg>
                         </button>
                         
-                        <div class="absolute bottom-10 text-gray-400 text-sm animate-bounce">
-                            터치하여 정답 확인
+                        <div class="absolute bottom-6 text-gray-300 text-xs animate-bounce font-medium">
+                            터치하여 뜻 확인
                         </div>
                     </div>
 
                     <!-- Back -->
                     <div class="card-face card-back no-scrollbar p-6 border-b-4 border-indigo-100">
-                        <div class="w-full flex justify-between items-start mb-4 border-b pb-2">
-                            <div>
-                                <h3 id="card-word-back" class="text-3xl font-bold text-indigo-600 eng-font">Loading</h3>
+                        <div class="w-full flex justify-between items-start mb-4 border-b border-gray-100 pb-3">
+                            <div class="flex-1 pr-2">
+                                <h3 id="card-word-back" class="text-2xl md:text-3xl font-bold text-indigo-600 eng-font break-words">Loading</h3>
                                 <p id="card-phonetic" class="text-gray-400 text-sm font-mono mt-1">/---/</p>
                             </div>
-                            <button onclick="event.stopPropagation(); playAudio()" class="text-gray-400 hover:text-indigo-600">
+                            <button onclick="event.stopPropagation(); playAudio()" class="p-2 -mr-2 text-gray-400 hover:text-indigo-600 active:text-indigo-800">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                                 </svg>
                             </button>
                         </div>
                         
-                        <div id="meanings-container" class="w-full space-y-4 text-left">
+                        <div id="meanings-container" class="w-full space-y-3 text-left pb-10">
                             <!-- Meanings will be injected here -->
                         </div>
 
-                        <div class="mt-auto pt-6 w-full text-center">
-                            <p class="text-xs text-gray-400 mb-2">스스로 평가해보세요</p>
+                        <div class="mt-auto w-full text-center">
+                            <p class="text-[10px] text-gray-300 uppercase tracking-widest">Self Check</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Controls (OX Quiz Style) -->
-            <div class="flex justify-between items-center gap-3 shrink-0 h-16">
-                <button onclick="updateProficiency(-1)" class="flex-1 h-full bg-white border-2 border-red-100 text-red-500 rounded-xl shadow-sm hover:bg-red-50 hover:border-red-300 active:scale-95 transition-all flex flex-col justify-center items-center">
+            <!-- Controls (OX Quiz Style) - Taller for easier tapping -->
+            <div class="flex justify-between items-center gap-3 shrink-0 h-[4.5rem]">
+                <button onclick="updateProficiency(-1)" class="flex-1 h-full bg-white border-2 border-red-100 text-red-500 rounded-2xl shadow-sm hover:bg-red-50 active:scale-95 transition-all flex flex-col justify-center items-center">
                     <span class="font-bold text-lg">모름 (X)</span>
-                    <span class="text-[10px] text-red-400">자주 복습</span>
+                    <span class="text-[10px] text-red-400 font-medium">1단계 하락</span>
                 </button>
 
-                <button onclick="updateProficiency(1)" class="flex-1 h-full bg-indigo-600 border-2 border-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 active:scale-95 transition-all flex flex-col justify-center items-center">
+                <button onclick="updateProficiency(1)" class="flex-1 h-full bg-indigo-600 border-2 border-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 active:bg-indigo-700 active:scale-95 transition-all flex flex-col justify-center items-center">
                     <span class="font-bold text-lg">알아요 (O)</span>
-                    <span class="text-[10px] text-indigo-200">다음 단계로</span>
+                    <span class="text-[10px] text-indigo-200 font-medium">1단계 상승</span>
                 </button>
             </div>
         </div>
 
         <!-- List Mode View (Hidden by default) -->
-        <div id="view-list" class="hidden w-full h-full flex-col bg-gray-50 rounded-lg shadow-inner overflow-hidden">
+        <div id="view-list" class="hidden w-full h-full flex-col bg-gray-50 rounded-xl shadow-inner overflow-hidden border border-gray-100">
             <div class="p-3 bg-white border-b flex justify-between items-center shrink-0 gap-2">
                 <div class="relative flex-1">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -200,11 +212,11 @@
                             <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                         </svg>
                     </div>
-                    <input type="text" id="search-input" onkeyup="filterList()" placeholder="단어 검색..." class="w-full pl-9 pr-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <input type="text" id="search-input" onkeyup="filterList()" placeholder="단어 검색..." class="w-full pl-9 pr-3 py-2.5 border-gray-200 bg-gray-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
                 </div>
-                <button onclick="resetAllData()" class="text-xs text-red-500 underline hover:text-red-700 whitespace-nowrap">초기화</button>
+                <button onclick="resetAllData()" class="px-3 py-2 text-xs font-bold text-red-500 bg-red-50 rounded-lg active:bg-red-100 whitespace-nowrap">초기화</button>
             </div>
-            <div id="word-list-container" class="flex-1 overflow-y-auto p-3 space-y-3">
+            <div id="word-list-container" class="flex-1 overflow-y-auto p-2 space-y-2">
                 <!-- Word list items injected here -->
             </div>
         </div>
@@ -212,259 +224,655 @@
     </main>
 
     <script>
-        // --- Data: Full A2 Level Words (Approximately 600+ key words) ---
+        // --- Data: A2 Level Words (Elementary - Continued & Fixed) ---
         // Format: [Word, Phonetic, "pos:meaning", "pos:meaning", ...]
         const rawVocabData = [
-            ["ability", "/əˈbɪl.ə.ti/", "n:능력, 재능"], ["able", "/ˈeɪ.bəl/", "adj:~할 수 있는"], ["accept", "/əkˈsept/", "v:받아들이다, 수락하다"], ["accident", "/ˈæk.sɪ.dənt/", "n:사고, 우연"], ["ache", "/eɪk/", "n:아픔", "v:아프다"],
-            ["act", "/ækt/", "v:행동하다, 연기하다", "n:행동, 막"], ["active", "/ˈæk.tɪv/", "adj:활동적인, 적극적인"], ["actually", "/ˈæk.tʃu.ə.li/", "adv:사실은, 실제로"], ["adventure", "/ədˈven.tʃər/", "n:모험"], ["advertisement", "/ədˈvɜː.tɪs.mənt/", "n:광고"],
-            ["afford", "/əˈfɔːd/", "v:~할 여유가 되다"], ["afraid", "/əˈfreɪd/", "adj:두려워하는, 유감인"], ["agree", "/əˈɡriː/", "v:동의하다"], ["ahead", "/əˈhed/", "adv:앞에, 미리"], ["air", "/eər/", "n:공기", "n:항공"],
-            ["alarm", "/əˈlɑːm/", "n:경보, 자명종"], ["alive", "/əˈlaɪv/", "adj:살아있는"], ["all", "/ɔːl/", "det:모든", "adv:완전히"], ["allow", "/əˈlaʊ/", "v:허락하다"], ["almost", "/ˈɔːl.məʊst/", "adv:거의"],
-            ["alone", "/əˈləʊn/", "adj:혼자인", "adv:홀로"], ["along", "/əˈlɒŋ/", "prep:~을 따라"], ["already", "/ɔːlˈred.i/", "adv:이미, 벌써"], ["alright", "/ɔːlˈraɪt/", "adj:괜찮은", "adv:좋아"], ["also", "/ˈɔːl.səʊ/", "adv:또한"],
-            ["although", "/ɔːlˈðəʊ/", "conj:비록 ~일지라도"], ["always", "/ˈɔːl.weɪz/", "adv:항상"], ["amaze", "/əˈmeɪz/", "v:놀라게 하다"], ["ambition", "/æmˈbɪʃ.ən/", "n:야망"], ["among", "/əˈmʌŋ/", "prep:~사이에"],
-            ["amount", "/əˈmaʊnt/", "n:양, 액수"], ["ancient", "/ˈeɪn.ʃənt/", "adj:고대의"], ["angle", "/ˈæŋ.ɡəl/", "n:각도"], ["angry", "/ˈæŋ.ɡri/", "adj:화난"], ["animal", "/ˈæn.ɪ.məl/", "n:동물"],
-            ["ankle", "/ˈæŋ.kəl/", "n:발목"], ["anniversary", "/ˌæn.ɪˈvɜː.sər.i/", "n:기념일"], ["announce", "/əˈnaʊns/", "v:발표하다"], ["annoy", "/əˈnɔɪ/", "v:짜증나게 하다"], ["another", "/əˈnʌð.ər/", "det:또 다른"],
-            ["answer", "/ˈɑːn.sər/", "n:대답", "v:대답하다"], ["anxious", "/ˈæŋk.ʃəs/", "adj:불안해하는"], ["any", "/ˈen.i/", "det:어떤"], ["anybody", "/ˈen.iˌbɒd.i/", "pron:누구든지"], ["anymore", "/ˌen.iˈmɔːr/", "adv:더 이상"],
-            ["anyway", "/ˈen.i.weɪ/", "adv:어쨌든"], ["anywhere", "/ˈen.i.weər/", "adv:어디든지"], ["apart", "/əˈpɑːt/", "adv:떨어져"], ["apartment", "/əˈpɑːt.mənt/", "n:아파트"], ["apologize", "/əˈpɒl.ə.dʒaɪz/", "v:사과하다"],
-            ["appearance", "/əˈpɪə.rəns/", "n:외모, 출현"], ["apple", "/ˈæp.l/", "n:사과"], ["application", "/ˌæp.lɪˈkeɪ.ʃən/", "n:지원, 신청, 앱"], ["apply", "/əˈplaɪ/", "v:지원하다, 적용하다"], ["appointment", "/əˈpɔɪnt.mənt/", "n:약속, 임명"],
-            ["approach", "/əˈprəʊtʃ/", "v:접근하다", "n:접근법"], ["architect", "/ˈɑː.kɪ.tekt/", "n:건축가"], ["area", "/ˈeə.ri.ə/", "n:지역, 분야"], ["argue", "/ˈɑːɡ.juː/", "v:논쟁하다, 주장하다"], ["argument", "/ˈɑːɡ.jə.mənt/", "n:논쟁"],
-            ["arm", "/ɑːm/", "n:팔"], ["army", "/ˈɑː.mi/", "n:군대"], ["around", "/əˈraʊnd/", "prep:~주위에", "adv:대략"], ["arrange", "/əˈreɪndʒ/", "v:정하다, 배열하다"], ["arrest", "/əˈrest/", "v:체포하다"],
-            ["arrival", "/əˈraɪ.vəl/", "n:도착"], ["arrive", "/əˈraɪv/", "v:도착하다"], ["art", "/ɑːt/", "n:예술, 미술"], ["article", "/ˈɑː.tɪ.kəl/", "n:기사, 조항"], ["artist", "/ˈɑː.tɪst/", "n:예술가"],
-            ["as", "/æz/", "prep:~로서", "conj:~할 때"], ["ashamed", "/əˈʃeɪmd/", "adj:부끄러운"], ["ask", "/ɑːsk/", "v:묻다, 요청하다"], ["asleep", "/əˈsliːp/", "adj:잠든"], ["assistant", "/əˈsɪs.tənt/", "n:조수, 보조"],
-            ["attack", "/əˈtæk/", "v:공격하다", "n:공격"], ["attend", "/əˈtend/", "v:참석하다"], ["attention", "/əˈten.ʃən/", "n:주의, 주목"], ["attitude", "/ˈæt.ɪ.tʃuːd/", "n:태도"], ["attract", "/əˈtrækt/", "v:마음을 끌다"],
-            ["attractive", "/əˈtræk.tɪv/", "adj:매력적인"], ["audience", "/ˈɔː.di.əns/", "n:청중, 관객"], ["aunt", "/ɑːnt/", "n:이모, 고모"], ["author", "/ˈɔː.θər/", "n:작가"], ["autumn", "/ˈɔː.təm/", "n:가을"],
-            ["available", "/əˈveɪ.lə.bəl/", "adj:이용 가능한"], ["average", "/ˈæv.ər.ɪdʒ/", "adj:평균의", "n:평균"], ["avoid", "/əˈvɔɪd/", "v:피하다"], ["awake", "/əˈweɪk/", "adj:깨어있는"], ["award", "/əˈwɔːd/", "n:상", "v:수여하다"],
-            ["awful", "/ˈɔː.fəl/", "adj:끔찍한"], ["baby", "/ˈbeɪ.bi/", "n:아기"], ["back", "/bæk/", "n:등", "adv:뒤로"], ["background", "/ˈbæk.ɡraʊnd/", "n:배경"], ["bad", "/bæd/", "adj:나쁜"],
-            ["badly", "/ˈbæd.li/", "adv:나쁘게, 심하게"], ["bag", "/bæɡ/", "n:가방"], ["bake", "/beɪk/", "v:굽다"], ["balance", "/ˈbæl.əns/", "n:균형", "v:균형을 잡다"], ["ball", "/bɔːl/", "n:공"],
-            ["balloon", "/bəˈluːn/", "n:풍선"], ["banana", "/bəˈnɑː.nə/", "n:바나나"], ["band", "/bænd/", "n:밴드, 끈"], ["bank", "/bæŋk/", "n:은행, 둑"], ["bar", "/bɑːr/", "n:바, 막대"],
-            ["base", "/beɪs/", "n:기초, 토대"], ["baseball", "/ˈbeɪs.bɔːl/", "n:야구"], ["basic", "/ˈbeɪ.sɪk/", "adj:기초적인"], ["basket", "/ˈbɑː.skɪt/", "n:바구니"], ["bat", "/bæt/", "n:방망이, 박쥐"],
-            ["bath", "/bɑːθ/", "n:목욕"], ["bathroom", "/ˈbɑːθ.ruːm/", "n:욕실"], ["battery", "/ˈbæt.ər.i/", "n:배터리"], ["battle", "/ˈbæt.əl/", "n:전투"], ["be", "/biː/", "v:이다, 있다"],
-            ["beach", "/biːtʃ/", "n:해변"], ["bean", "/biːn/", "n:콩"], ["bear", "/beər/", "n:곰", "v:참다"], ["beard", "/bɪəd/", "n:턱수염"], ["beat", "/biːt/", "v:이기다, 때리다", "n:박자"],
-            ["beautiful", "/ˈbjuː.tɪ.fəl/", "adj:아름다운"], ["beauty", "/ˈbjuː.ti/", "n:아름다움"], ["because", "/bɪˈkɒz/", "conj:~때문에"], ["become", "/bɪˈkʌm/", "v:~이 되다"], ["bed", "/bed/", "n:침대"],
-            ["bedroom", "/ˈbed.ruːm/", "n:침실"], ["bee", "/biː/", "n:벌"], ["beef", "/biːf/", "n:소고기"], ["before", "/bɪˈfɔːr/", "prep:~전에"], ["begin", "/bɪˈɡɪn/", "v:시작하다"],
-            ["behaviour", "/bɪˈheɪ.vjər/", "n:행동, 태도"], ["behind", "/bɪˈhaɪnd/", "prep:~뒤에"], ["believe", "/bɪˈliːv/", "v:믿다"], ["bell", "/bel/", "n:종"], ["belong", "/bɪˈlɒŋ/", "v:~에 속하다"],
-            ["below", "/bɪˈləʊ/", "prep:~아래에"], ["belt", "/belt/", "n:벨트"], ["bend", "/bend/", "v:구부리다"], ["beneath", "/bɪˈniːθ/", "prep:~바로 밑에"], ["benefit", "/ˈben.ɪ.fɪt/", "n:이득", "v:이롭다"],
-            ["beside", "/bɪˈsaɪd/", "prep:~옆에"], ["best", "/best/", "adj:최고의"], ["bet", "/bet/", "v:내기하다"], ["better", "/ˈbet.ər/", "adj:더 좋은"], ["between", "/bɪˈtwiːn/", "prep:~사이에"],
-            ["beyond", "/biˈjɒnd/", "prep:~너머에"], ["bicycle", "/ˈbaɪ.sɪ.kəl/", "n:자전거"], ["big", "/bɪɡ/", "adj:큰"], ["bike", "/baɪk/", "n:자전거"], ["bill", "/bɪl/", "n:청구서, 지폐"],
-            ["bin", "/bɪn/", "n:쓰레기통"], ["biology", "/baɪˈɒl.ə.dʒi/", "n:생물학"], ["bird", "/bɜːd/", "n:새"], ["birth", "/bɜːθ/", "n:탄생"], ["birthday", "/ˈbɜːθ.deɪ/", "n:생일"],
-            ["biscuit", "/ˈbɪs.kɪt/", "n:비스킷"], ["bit", "/bɪt/", "n:조금"], ["bite", "/baɪt/", "v:물다"], ["black", "/blæk/", "adj:검은"], ["blame", "/bleɪm/", "v:비난하다", "n:책임"],
-            ["blanket", "/ˈblæŋ.kɪt/", "n:담요"], ["bleed", "/bliːd/", "v:피를 흘리다"], ["blind", "/blaɪnd/", "adj:눈이 먼"], ["block", "/blɒk/", "n:블록, 구역", "v:막다"], ["blog", "/blɒɡ/", "n:블로그"],
-            ["blonde", "/blɒnd/", "adj:금발의"], ["blood", "/blʌd/", "n:피"], ["blow", "/bləʊ/", "v:불다"], ["blue", "/bluː/", "adj:파란"], ["board", "/bɔːd/", "n:판, 게시판"],
-            ["boat", "/bəʊt/", "n:배, 보트"], ["body", "/ˈbɒd.i/", "n:몸"], ["boil", "/bɔɪl/", "v:끓다"], ["bomb", "/bɒm/", "n:폭탄"], ["bone", "/bəʊn/", "n:뼈"],
-            ["book", "/bʊk/", "n:책", "v:예약하다"], ["boot", "/buːt/", "n:부츠"], ["border", "/ˈbɔː.dər/", "n:국경, 경계"], ["bored", "/bɔːd/", "adj:지루해하는"], ["boring", "/ˈbɔː.rɪŋ/", "adj:지루한"],
-            ["born", "/bɔːn/", "adj:태어난"], ["borrow", "/ˈbɒr.əʊ/", "v:빌리다"], ["boss", "/bɒs/", "n:상사"], ["both", "/bəʊθ/", "det:둘 다"], ["bother", "/ˈbɒð.ər/", "v:괴롭히다, 신경쓰다"],
-            ["bottle", "/ˈbɒt.əl/", "n:병"], ["bottom", "/ˈbɒt.əm/", "n:바닥, 맨 아래"], ["bowl", "/bəʊl/", "n:그릇, 사발"], ["box", "/bɒks/", "n:상자"], ["boy", "/bɔɪ/", "n:소년"],
-            ["brain", "/breɪn/", "n:뇌"], ["brave", "/breɪv/", "adj:용감한"], ["bread", "/bred/", "n:빵"], ["break", "/breɪk/", "v:깨다, 고장나다", "n:휴식"], ["breakfast", "/ˈbrek.fəst/", "n:아침식사"],
-            ["breath", "/breθ/", "n:숨"], ["breathe", "/briːð/", "v:숨쉬다"], ["brick", "/brɪk/", "n:벽돌"], ["bridge", "/brɪdʒ/", "n:다리"], ["brief", "/briːf/", "adj:짧은, 간결한"],
-            ["bright", "/braɪt/", "adj:밝은, 똑똑한"], ["brilliant", "/ˈbrɪl.jənt/", "adj:훌륭한, 눈부신"], ["bring", "/brɪŋ/", "v:가져오다"], ["broad", "/brɔːd/", "adj:넓은"], ["broadcast", "/ˈbrɔːd.kɑːst/", "n:방송", "v:방송하다"],
-            ["broken", "/ˈbrəʊ.kən/", "adj:부서진, 고장난"], ["brother", "/ˈbrʌð.ər/", "n:형제"], ["brown", "/braʊn/", "adj:갈색의"], ["brush", "/brʌʃ/", "n:솔, 붓", "v:솔질하다"], ["bucket", "/ˈbʌk.ɪt/", "n:양동이"],
-            ["build", "/bɪld/", "v:짓다, 건설하다"], ["building", "/ˈbɪl.dɪŋ/", "n:건물"], ["bullet", "/ˈbʊl.ɪt/", "n:총알"], ["bunch", "/bʌntʃ/", "n:다발, 송이"], ["burn", "/bɜːn/", "v:타다, 태우다"],
-            ["bury", "/ˈberi/", "v:묻다"], ["bus", "/bʌs/", "n:버스"], ["bush", "/bʊʃ/", "n:덤불"], ["business", "/ˈbɪz.nɪs/", "n:사업, 일"], ["businessman", "/ˈbɪz.nɪs.mæn/", "n:사업가"],
-            ["busy", "/ˈbɪz.i/", "adj:바쁜"], ["but", "/bʌt/", "conj:그러나"], ["butter", "/ˈbʌt.ər/", "n:버터"], ["butterfly", "/ˈbʌt.ə.flaɪ/", "n:나비"], ["button", "/ˈbʌt.ən/", "n:단추, 버튼"],
-            ["buy", "/baɪ/", "v:사다"], ["by", "/baɪ/", "prep:~옆에, ~에 의해"], ["bye", "/baɪ/", "int:안녕"], ["cabinet", "/ˈkæb.ɪ.nət/", "n:캐비닛, 내각"], ["cable", "/ˈkeɪ.bəl/", "n:케이블"],
-            ["cake", "/keɪk/", "n:케이크"], ["calculate", "/ˈkæl.kjə.leɪt/", "v:계산하다"], ["calendar", "/ˈkæl.ən.dər/", "n:달력"], ["call", "/kɔːl/", "v:전화하다, 부르다"], ["calm", "/kɑːm/", "adj:차분한"],
-            ["camera", "/ˈkæm.rə/", "n:카메라"], ["camp", "/kæmp/", "n:캠프", "v:야영하다"], ["campaign", "/kæmˈpeɪn/", "n:캠페인"], ["can", "/kæn/", "v:할 수 있다", "n:깡통"], ["cancel", "/ˈkæn.səl/", "v:취소하다"],
-            ["cancer", "/ˈkæn.sər/", "n:암"], ["candidate", "/ˈkæn.dɪ.dət/", "n:후보자"], ["candle", "/ˈkæn.dəl/", "n:양초"], ["candy", "/ˈkæn.di/", "n:사탕"], ["cap", "/kæp/", "n:모자, 뚜껑"],
-            ["capital", "/ˈkæp.ɪ.təl/", "n:수도, 대문자"], ["captain", "/ˈkæp.tɪn/", "n:선장, 주장"], ["car", "/kɑːr/", "n:자동차"], ["card", "/kɑːd/", "n:카드"], ["care", "/keər/", "n:돌봄, 주의", "v:상관하다"],
-            ["career", "/kəˈrɪər/", "n:경력, 직업"], ["careful", "/ˈkeə.fəl/", "adj:조심스러운"], ["careless", "/ˈkeə.ləs/", "adj:부주의한"], ["carpet", "/ˈkɑː.pɪt/", "n:카펫"], ["carrot", "/ˈkær.ət/", "n:당근"],
-            ["carry", "/ˈkær.i/", "v:나르다, 지니다"], ["cartoon", "/kɑːˈtuːn/", "n:만화"], ["case", "/keɪs/", "n:경우, 상자"], ["cash", "/kæʃ/", "n:현금"], ["cast", "/kɑːst/", "n:출연진", "v:던지다"],
-            ["cat", "/kæt/", "n:고양이"], ["catch", "/kætʃ/", "v:잡다, (병에) 걸리다"], ["category", "/ˈkæt.ə.ɡri/", "n:범주"], ["cause", "/kɔːz/", "n:원인", "v:야기하다"], ["cd", "/ˌsiːˈdiː/", "n:CD"],
-            ["ceiling", "/ˈsiː.lɪŋ/", "n:천장"], ["celebrate", "/ˈsel.ə.breɪt/", "v:기념하다, 축하하다"], ["celebration", "/ˌsel.əˈbreɪ.ʃən/", "n:기념, 축하"], ["cell", "/sel/", "n:세포, 감방"], ["cent", "/sent/", "n:센트"],
-            ["center", "/ˈsen.tər/", "n:중심, 센터"], ["central", "/ˈsen.trəl/", "adj:중심의"], ["century", "/ˈsen.tʃər.i/", "n:세기 (100년)"], ["ceremony", "/ˈser.ɪ.mə.ni/", "n:의식"], ["certain", "/ˈsɜː.tən/", "adj:확실한, 어떤"],
-            ["certainly", "/ˈsɜː.tən.li/", "adv:확실히"], ["chain", "/tʃeɪn/", "n:사슬, 체인점"], ["chair", "/tʃeər/", "n:의자"], ["chairman", "/ˈtʃeə.mən/", "n:의장"], ["challenge", "/ˈtʃæl.ɪndʒ/", "n:도전", "v:도전하다"],
-            ["champion", "/ˈtʃæm.pi.ən/", "n:챔피언"], ["chance", "/tʃɑːns/", "n:기회, 가능성"], ["change", "/tʃeɪndʒ/", "v:변하다, 바꾸다", "n:변화, 잔돈"], ["channel", "/ˈtʃæn.əl/", "n:채널, 수로"], ["chapter", "/ˈtʃæp.tər/", "n:장 (책의)"],
-            ["character", "/ˈkær.ək.tər/", "n:성격, 등장인물"], ["charge", "/tʃɑːdʒ/", "v:청구하다, 충전하다", "n:요금"], ["charity", "/ˈtʃær.ə.ti/", "n:자선, 자선단체"], ["chart", "/tʃɑːt/", "n:도표"], ["cheap", "/tʃiːp/", "adj:싼"],
-            ["cheat", "/tʃiːt/", "v:속이다, 부정행위하다"], ["check", "/tʃek/", "v:확인하다, 점검하다"], ["cheek", "/tiːk/", "n:뺨"], ["cheerful", "/ˈtʃɪə.fəl/", "adj:발랄한, 쾌활한"], ["cheese", "/tʃiːz/", "n:치즈"],
-            ["chef", "/ʃef/", "n:요리사"], ["chemical", "/ˈkem.ɪ.kəl/", "adj:화학의", "n:화학물질"], ["chemistry", "/ˈkem.ɪ.stri/", "n:화학"], ["chest", "/tʃest/", "n:가슴, 상자"], ["chicken", "/ˈtʃɪk.ɪn/", "n:닭, 닭고기"],
-            ["chief", "/tʃiːf/", "adj:주요한", "n:우두머리"], ["child", "/tʃaɪld/", "n:아이"], ["childhood", "/ˈtʃaɪld.hʊd/", "n:어린 시절"], ["chip", "/tʃɪp/", "n:조각, 칩"], ["chocolate", "/ˈtʃɒk.lət/", "n:초콜릿"],
-            ["choice", "/tʃɔɪs/", "n:선택"], ["choose", "/tʃuːz/", "v:선택하다"], ["church", "/tʃɜːtʃ/", "n:교회"], ["cigarette", "/ˌsɪɡ.ərˈet/", "n:담배"], ["cinema", "/ˈsɪn.ə.mə/", "n:영화관"],
-            ["circle", "/ˈsɜː.kəl/", "n:원", "v:돌다"], ["citizen", "/ˈsɪt.ɪ.zən/", "n:시민"], ["city", "/ˈsɪt.i/", "n:도시"], ["civil", "/ˈsɪv.əl/", "adj:시민의"], ["claim", "/kleɪm/", "v:주장하다, 청구하다"],
-            ["class", "/klɑːs/", "n:수업, 계급"], ["classic", "/ˈklæs.ɪk/", "adj:고전적인"], ["classroom", "/ˈklɑːs.ruːm/", "n:교실"], ["clean", "/kliːn/", "adj:깨끗한", "v:청소하다"], ["clear", "/klɪər/", "adj:맑은, 명확한"],
-            ["clearly", "/ˈklɪə.li/", "adv:분명히"], ["clerk", "/klɑːk/", "n:점원, 사무원"], ["clever", "/ˈklev.ər/", "adj:영리한"], ["click", "/klɪk/", "v:클릭하다"], ["client", "/ˈklaɪ.ənt/", "n:의뢰인, 고객"],
-            ["climate", "/ˈklaɪ.mət/", "n:기후"], ["climb", "/klaɪm/", "v:오르다"], ["clock", "/klɒk/", "n:시계"], ["close", "/kləʊz/", "v:닫다", "adj:가까운"], ["closely", "/ˈkləʊs.li/", "adv:밀접하게, 면밀히"],
-            ["clothes", "/kləʊðz/", "n:옷"], ["clothing", "/ˈkləʊ.ðɪŋ/", "n:의류"], ["cloud", "/klaʊd/", "n:구름"], ["club", "/klʌb/", "n:클럽, 동호회"], ["coach", "/kəʊtʃ/", "n:코치, 버스"],
-            ["coal", "/kəʊl/", "n:석탄"], ["coast", "/kəʊst/", "n:해안"], ["coat", "/kəʊt/", "n:코트"], ["code", "/kəʊd/", "n:암호, 코드"], ["coffee", "/ˈkɒf.i/", "n:커피"],
-            ["coin", "/kɔɪn/", "n:동전"], ["cold", "/kəʊld/", "adj:추운", "n:감기"], ["collapse", "/kəˈlæps/", "v:무너지다"], ["colleague", "/ˈkɒl.iːɡ/", "n:동료"], ["collect", "/kəˈlekt/", "v:수집하다, 모으다"],
-            ["collection", "/kəˈlek.ʃən/", "n:수집품"], ["college", "/ˈkɒl.ɪdʒ/", "n:대학"], ["color", "/ˈkʌl.ər/", "n:색깔"], ["column", "/ˈkɒl.əm/", "n:기둥, 칼럼"], ["combination", "/ˌkɒm.bɪˈneɪ.ʃən/", "n:조합"],
-            ["combine", "/kəmˈbaɪn/", "v:결합하다"], ["come", "/kʌm/", "v:오다"], ["comedy", "/ˈkɒm.ə.di/", "n:코미디"], ["comfort", "/ˈkʌm.fət/", "n:편안함, 위로"], ["comfortable", "/ˈkʌm.fə.tə.bəl/", "adj:편안한"],
-            ["command", "/kəˈmɑːnd/", "n:명령", "v:명령하다"], ["comment", "/ˈkɒm.ent/", "n:논평, 댓글"], ["commercial", "/kəˈmɜː.ʃəl/", "adj:상업적인", "n:광고"], ["commission", "/kəˈmɪʃ.ən/", "n:위원회, 수수료"], ["commit", "/kəˈmɪt/", "v:저지르다, 약속하다"],
-            ["committee", "/kəˈmɪt.i/", "n:위원회"], ["common", "/ˈkɒm.ən/", "adj:흔한, 공통의"], ["communicate", "/kəˈmjuː.nɪ.keɪt/", "v:의사소통하다"], ["communication", "/kəˌmjuː.nɪˈkeɪ.ʃən/", "n:의사소통"], ["community", "/kəˈmjuː.nə.ti/", "n:지역사회, 공동체"],
-            ["company", "/ˈkʌm.pə.ni/", "n:회사, 동행"], ["compare", "/kəmˈpeər/", "v:비교하다"], ["comparison", "/kəmˈpær.ɪ.sən/", "n:비교"], ["compete", "/kəmˈpiːt/", "v:경쟁하다"], ["competition", "/ˌkɒm.pəˈtɪʃ.ən/", "n:경쟁, 시합"],
-            ["competitive", "/kəmˈpet.ɪ.tɪv/", "adj:경쟁적인"], ["complain", "/kəmˈpleɪn/", "v:불평하다"], ["complaint", "/kəmˈpleɪnt/", "n:불평"], ["complete", "/kəmˈpliːt/", "v:완료하다", "adj:완전한"], ["completely", "/kəmˈpliːt.li/", "adv:완전히"],
-            ["complex", "/ˈkɒm.pleks/", "adj:복잡한"], ["complicated", "/ˈkɒm.plɪ.keɪ.tɪd/", "adj:복잡한"], ["computer", "/kəmˈpjuː.tər/", "n:컴퓨터"], ["concentrate", "/ˈkɒn.sən.treɪt/", "v:집중하다"], ["concept", "/ˈkɒn.sept/", "n:개념"],
-            ["concern", "/kənˈsɜːn/", "n:우려, 관심", "v:관련되다"], ["concerned", "/kənˈsɜːnd/", "adj:걱정하는"], ["concert", "/ˈkɒn.sət/", "n:콘서트"], ["conclude", "/kənˈkluːd/", "v:결론짓다"], ["conclusion", "/kənˈkluː.ʒən/", "n:결론"],
-            ["condition", "/kənˈdɪʃ.ən/", "n:상태, 조건"], ["conduct", "/kənˈdʌkt/", "v:수행하다, 지휘하다"], ["conference", "/ˈkɒn.fər.əns/", "n:회의"], ["confidence", "/ˈkɒn.fɪ.dəns/", "n:자신감, 신뢰"], ["confident", "/ˈkɒn.fɪ.dənt/", "adj:자신감 있는"],
-            ["confirm", "/kənˈfɜːm/", "v:확인하다"], ["conflict", "/ˈkɒn.flɪkt/", "n:갈등", "v:충돌하다"], ["confused", "/kənˈfjuːzd/", "adj:혼란스러운"], ["confusing", "/kənˈfjuː.zɪŋ/", "adj:혼란스러운"], ["confusion", "/kənˈfjuː.ʒən/", "n:혼란"],
-            ["congratulate", "/kənˈɡræt.ju.leɪt/", "v:축하하다"], ["congratulation", "/kənˌɡræt.juˈleɪ.ʃən/", "n:축하"], ["connect", "/kəˈnekt/", "v:연결하다"], ["connection", "/kəˈnek.ʃən/", "n:연결, 관계"], ["conscious", "/ˈkɒn.ʃəs/", "adj:의식하는"],
-            ["consequence", "/ˈkɒn.sɪ.kwəns/", "n:결과"], ["conservative", "/kənˈsɜː.və.tɪv/", "adj:보수적인"], ["consider", "/kənˈsɪd.ər/", "v:고려하다"], ["considerable", "/kənˈsɪd.ər.ə.bəl/", "adj:상당한"], ["consideration", "/kənˌsɪd.əˈreɪ.ʃən/", "n:고려, 배려"],
-            ["consist", "/kənˈsɪst/", "v:구성되다"], ["consistent", "/kənˈsɪs.tənt/", "adj:일관된"], ["constant", "/ˈkɒn.stənt/", "adj:끊임없는"], ["constantly", "/ˈkɒn.stənt.li/", "adv:끊임없이"], ["construct", "/kənˈstrʌkt/", "v:건설하다"],
-            ["construction", "/kənˈstrʌk.ʃən/", "n:건설"], ["consult", "/kənˈsʌlt/", "v:상담하다"], ["consumer", "/kənˈsjuː.mər/", "n:소비자"], ["contact", "/ˈkɒn.tækt/", "n:접촉, 연락", "v:연락하다"], ["contain", "/kənˈteɪn/", "v:포함하다"],
-            ["container", "/kənˈteɪ.nər/", "n:용기, 컨테이너"], ["contemporary", "/kənˈtem.pər.ər.i/", "adj:현대의, 동시대의"], ["content", "/ˈkɒn.tent/", "n:내용물", "adj:만족하는"], ["contest", "/ˈkɒn.test/", "n:대회"], ["context", "/ˈkɒn.tekst/", "n:맥락, 문맥"],
-            ["continent", "/ˈkɒn.tɪ.nənt/", "n:대륙"], ["continue", "/kənˈtɪn.juː/", "v:계속하다"], ["continuous", "/kənˈtɪn.ju.əs/", "adj:계속되는"], ["contract", "/ˈkɒn.trækt/", "n:계약", "v:수축하다"], ["contrast", "/ˈkɒn.trɑːst/", "n:대조", "v:대조를 이루다"],
-            ["contribute", "/kənˈtrɪb.juːt/", "v:기여하다"], ["contribution", "/ˌkɒn.trɪˈbjuː.ʃən/", "n:기여"], ["control", "/kənˈtrəʊl/", "n:통제", "v:통제하다"], ["convenient", "/kənˈviː.ni.ənt/", "adj:편리한"], ["conversation", "/ˌkɒn.vəˈseɪ.ʃən/", "n:대화"],
-            ["convert", "/kənˈvɜːt/", "v:전환하다"], ["convince", "/kənˈvɪns/", "v:설득하다"], ["cook", "/kʊk/", "v:요리하다", "n:요리사"], ["cookie", "/ˈkʊk.i/", "n:쿠키"], ["cooking", "/ˈkʊk.ɪŋ/", "n:요리"],
-            ["cool", "/kuːl/", "adj:시원한, 멋진"], ["cooperation", "/kəʊˌɒp.ərˈeɪ.ʃən/", "n:협력"], ["cope", "/kəʊp/", "v:대처하다"], ["copy", "/ˈkɒp.i/", "n:복사", "v:복사하다"], ["core", "/kɔːr/", "n:핵심"],
-            ["corner", "/ˈkɔː.nər/", "n:모퉁이, 구석"], ["correct", "/kəˈrekt/", "adj:맞는", "v:수정하다"], ["cost", "/kɒst/", "n:비용", "v:비용이 들다"], ["cottage", "/ˈkɒt.ɪdʒ/", "n:오두막, 시골집"], ["cotton", "/ˈkɒt.ən/", "n:면"],
-            ["cough", "/kɒf/", "v:기침하다", "n:기침"], ["could", "/kʊd/", "v:할 수 있었다"], ["council", "/ˈkaʊn.səl/", "n:의회"], ["count", "/kaʊnt/", "v:세다, 중요하다"], ["country", "/ˈkʌn.tri/", "n:나라, 시골"],
-            ["countryside", "/ˈkʌn.tri.saɪd/", "n:시골"], ["county", "/ˈkaʊn.ti/", "n:주, 군"], ["couple", "/ˈkʌp.əl/", "n:커플, 몇몇"], ["courage", "/ˈkʌr.ɪdʒ/", "n:용기"], ["course", "/kɔːs/", "n:강좌, 과정"],
-            ["court", "/kɔːt/", "n:법원, 경기장"], ["cousin", "/ˈkʌz.ən/", "n:사촌"], ["cover", "/ˈkʌv.ər/", "v:덮다", "n:표지"], ["cow", "/kaʊ/", "n:소"], ["crack", "/kræk/", "n:금, 틈", "v:금 가다"],
-            ["craft", "/krɑːft/", "n:공예, 기술"], ["crash", "/kræʃ/", "n:충돌, 추락", "v:충돌하다"], ["crazy", "/ˈkreɪ.zi/", "adj:미친, 열광하는"], ["cream", "/kriːm/", "n:크림"], ["create", "/kriˈeɪt/", "v:창조하다"],
-            ["creation", "/kriˈeɪ.ʃən/", "n:창조, 창작물"], ["creative", "/kriˈeɪ.tɪv/", "adj:창의적인"], ["creature", "/ˈkriː.tʃər/", "n:생물"], ["credit", "/ˈkred.ɪt/", "n:신용, 칭찬"], ["crew", "/kruː/", "n:승무원, 팀"],
-            ["crime", "/kraɪm/", "n:범죄"], ["criminal", "/ˈkrɪm.ɪ.nəl/", "n:범죄자", "adj:범죄의"], ["crisis", "/ˈkraɪ.sɪs/", "n:위기"], ["criterion", "/kraɪˈtɪə.ri.ən/", "n:기준"], ["critic", "/ˈkrɪt.ɪk/", "n:비평가"],
-            ["critical", "/ˈkrɪt.ɪ.kəl/", "adj:비판적인, 중요한"], ["criticism", "/ˈkrɪt.ɪ.sɪ.zəm/", "n:비판"], ["criticize", "/ˈkrɪt.ɪ.saɪz/", "v:비판하다"], ["crop", "/krɒp/", "n:작물, 수확"], ["cross", "/krɒs/", "v:건너다", "n:십자가"],
-            ["crowd", "/kraʊd/", "n:군중"], ["crowded", "/ˈkraʊ.dɪd/", "adj:붐비는"], ["crucial", "/ˈkruː.ʃəl/", "adj:중대한"], ["cruel", "/ˈkruː.əl/", "adj:잔인한"], ["cry", "/kraɪ/", "v:울다, 외치다"],
-            ["cultural", "/ˈkʌl.tʃər.əl/", "adj:문화의"], ["culture", "/ˈkʌl.tʃər/", "n:문화"], ["cup", "/kʌp/", "n:컵"], ["cupboard", "/ˈkʌb.əd/", "n:찬장"], ["cure", "/kjʊər/", "n:치료", "v:치료하다"],
-            ["curious", "/ˈkjʊə.ri.əs/", "adj:호기심 많은"], ["curly", "/ˈkɜː.li/", "adj:곱슬곱슬한"], ["currency", "/ˈkʌr.ən.si/", "n:통화"], ["current", "/ˈkʌr.ənt/", "adj:현재의", "n:흐름"], ["currently", "/ˈkʌr.ənt.li/", "adv:현재"],
-            ["curtain", "/ˈkɜː.tən/", "n:커튼"], ["curve", "/kɜːv/", "n:곡선", "v:구부러지다"], ["custom", "/ˈkʌs.təm/", "n:관습"], ["customer", "/ˈkʌs.tə.mər/", "n:고객"], ["cut", "/kʌt/", "v:자르다", "n:베인 상처"],
-            ["cycle", "/ˈsaɪ.kəl/", "n:순환, 자전거", "v:자전거 타다"], ["dad", "/dæd/", "n:아빠"], ["daily", "/ˈdeɪ.li/", "adj:매일의", "adv:매일"], ["damage", "/ˈdæm.ɪdʒ/", "n:손상", "v:손상을 주다"], ["dance", "/dɑːns/", "v:춤추다", "n:춤"],
-            ["dancer", "/ˈdɑːn.sər/", "n:댄서"], ["dancing", "/ˈdɑːn.sɪŋ/", "n:춤"], ["danger", "/ˈdeɪn.dʒər/", "n:위험"], ["dangerous", "/ˈdeɪn.dʒər.əs/", "adj:위험한"], ["dare", "/deər/", "v:감히 ~하다"],
-            ["dark", "/dɑːk/", "adj:어두운"], ["data", "/ˈdeɪ.tə/", "n:데이터"], ["date", "/deɪt/", "n:날짜, 데이트"], ["daughter", "/ˈdɔː.tər/", "n:딸"], ["day", "/deɪ/", "n:날, 하루, 낮"],
-            ["dead", "/ded/", "adj:죽은"], ["deaf", "/def/", "adj:귀머거리의"], ["deal", "/diːl/", "n:거래", "v:다루다"], ["dear", "/dɪər/", "adj:친애하는, 비싼"], ["death", "/deθ/", "n:죽음"],
-            ["debate", "/dɪˈbeɪt/", "n:토론", "v:토론하다"], ["debt", "/det/", "n:빚"], ["decade", "/ˈdek.eɪd/", "n:10년"], ["december", "/dɪˈsem.bər/", "n:12월"], ["decent", "/ˈdiː.sənt/", "adj:괜찮은, 예의 바른"],
-            ["decide", "/dɪˈsaɪd/", "v:결정하다"], ["decision", "/dɪˈsɪʒ.ən/", "n:결정"], ["declare", "/dɪˈkleər/", "v:선언하다"], ["decline", "/dɪˈklaɪn/", "v:감소하다, 거절하다"], ["decorate", "/ˈdek.ə.reɪt/", "v:장식하다"],
-            ["decoration", "/ˌdek.əˈreɪ.ʃən/", "n:장식"], ["decrease", "/dɪˈkriːs/", "v:감소하다", "n:감소"], ["deep", "/diːp/", "adj:깊은"], ["deeply", "/ˈdiːp.li/", "adv:깊이"], ["defeat", "/dɪˈfiːt/", "v:패배시키다", "n:패배"],
-            ["defence", "/dɪˈfens/", "n:방어"], ["defend", "/dɪˈfend/", "v:방어하다"], ["define", "/dɪˈfaɪn/", "v:정의하다"], ["definite", "/ˈdef.ɪ.nət/", "adj:확실한"], ["definitely", "/ˈdef.ɪ.nət.li/", "adv:분명히"],
-            ["definition", "/ˌdef.ɪˈnɪʃ.ən/", "n:정의"], ["degree", "/dɪˈɡriː/", "n:도, 학위, 정도"], ["delay", "/dɪˈleɪ/", "v:미루다, 지연시키다", "n:지연"], ["deliberate", "/dɪˈlɪb.ər.ət/", "adj:고의적인"], ["deliberately", "/dɪˈlɪb.ər.ət.li/", "adv:고의로"],
-            ["delicious", "/dɪˈlɪʃ.əs/", "adj:맛있는"], ["delight", "/dɪˈlaɪt/", "n:기쁨", "v:기쁘게 하다"], ["delighted", "/dɪˈlaɪ.tɪd/", "adj:기뻐하는"], ["deliver", "/dɪˈlɪv.ər/", "v:배달하다"], ["delivery", "/dɪˈlɪv.ər.i/", "n:배달"],
-            ["demand", "/dɪˈmɑːnd/", "n:수요, 요구", "v:요구하다"], ["demonstrate", "/ˈdem.ən.streɪt/", "v:증명하다, 시위하다"], ["dentist", "/ˈden.tɪst/", "n:치과의사"], ["deny", "/dɪˈnaɪ/", "v:부인하다"], ["department", "/dɪˈpɑːt.mənt/", "n:부서, 학과"],
-            ["departure", "/dɪˈpɑː.tʃər/", "n:출발"], ["depend", "/dɪˈpend/", "v:의존하다, ~에 달려있다"], ["depress", "/dɪˈpres/", "v:우울하게 하다"], ["depressed", "/dɪˈprest/", "adj:우울한"], ["depressing", "/dɪˈpres.ɪŋ/", "adj:우울하게 하는"],
-            ["depth", "/depθ/", "n:깊이"], ["describe", "/dɪˈskraɪb/", "v:묘사하다"], ["description", "/dɪˈskrɪp.ʃən/", "n:묘사"], ["desert", "/ˈdez.ət/", "n:사막", "v:버리다"], ["deserve", "/dɪˈzɜːv/", "v:~을 받을 만하다"],
-            ["design", "/dɪˈzaɪn/", "n:디자인", "v:디자인하다"], ["designer", "/dɪˈzaɪ.nər/", "n:디자이너"], ["desire", "/dɪˈzaɪər/", "n:욕망", "v:바라다"], ["desk", "/desk/", "n:책상"], ["desperate", "/ˈdes.pər.ət/", "adj:절망적인, 필사적인"],
-            ["despite", "/dɪˈspaɪt/", "prep:~에도 불구하고"], ["destination", "/ˌdes.tɪˈneɪ.ʃən/", "n:목적지"], ["destroy", "/dɪˈstrɔɪ/", "v:파괴하다"], ["detail", "/ˈdiː.teɪl/", "n:세부사항"], ["detailed", "/ˈdiː.teɪld/", "adj:상세한"],
-            ["detect", "/dɪˈtekt/", "v:감지하다"], ["detective", "/dɪˈtek.tɪv/", "n:형사, 탐정"], ["determine", "/dɪˈtɜː.mɪn/", "v:결정하다, 알아내다"], ["determined", "/dɪˈtɜː.mɪnd/", "adj:단호한"], ["develop", "/dɪˈvel.əp/", "v:개발하다, 발달하다"],
-            ["development", "/dɪˈvel.əp.mənt/", "n:발달, 개발"], ["device", "/dɪˈvaɪs/", "n:장치"], ["devote", "/dɪˈvəʊt/", "v:바치다, 헌신하다"], ["diagram", "/ˈdaɪ.ə.ɡræm/", "n:도표, 다이어그램"], ["dialogue", "/ˈdaɪ.ə.lɒɡ/", "n:대화"],
-            ["diamond", "/ˈdaɪ.ə.mənd/", "n:다이아몬드"], ["diary", "/ˈdaɪ.ər.i/", "n:일기"], ["dictionary", "/ˈdɪk.ʃən.ər.i/", "n:사전"], ["die", "/daɪ/", "v:죽다"], ["diet", "/ˈdaɪ.ət/", "n:식사, 다이어트"],
+            // ... (Previous data A-U) ...
+            ["ability", "/əˈbɪl.ə.ti/", "n:능력"], ["able", "/ˈeɪ.bəl/", "adj:할 수 있는"], ["about", "/əˈbaʊt/", "prep:~에 대하여", "adv:약"], ["above", "/əˈbʌv/", "prep:~위에"], ["abroad", "/əˈbrɔːd/", "adv:해외로"],
+            ["absent", "/ˈæb.sənt/", "adj:결석한"], ["accept", "/əkˈsept/", "v:받아들이다"], ["accident", "/ˈæk.sɪ.dənt/", "n:사고"], ["according to", "/əˈkɔː.dɪŋ tuː/", "prep:~에 따르면"], ["account", "/əˈkaʊnt/", "n:계좌, 설명"],
+            ["ache", "/eɪk/", "n:아픔", "v:아프다"], ["act", "/ækt/", "v:행동하다, 연기하다"], ["action", "/ˈæk.ʃən/", "n:행동, 조치"], ["active", "/ˈæk.tɪv/", "adj:활동적인"], ["activity", "/ækˈtɪv.ə.ti/", "n:활동"],
+            ["actor", "/ˈæk.tər/", "n:배우"], ["actress", "/ˈæk.trəs/", "n:여배우"], ["actually", "/ˈæk.tʃu.ə.li/", "adv:사실은"], ["add", "/æd/", "v:더하다"], ["address", "/əˈdres/", "n:주소"],
+            ["adult", "/ˈæd.ʌlt/", "n:성인"], ["advantage", "/ədˈvɑːn.tɪdʒ/", "n:이점"], ["adventure", "/ədˈven.tʃər/", "n:모험"], ["advertisement", "/ədˈvɜː.tɪs.mənt/", "n:광고"], ["advice", "/ədˈvaɪs/", "n:조언"],
+            ["advise", "/ədˈvaɪz/", "v:조언하다"], ["aeroplane", "/ˈeə.rə.pleɪn/", "n:비행기"], ["afford", "/əˈfɔːd/", "v:여유가 있다"], ["afraid", "/əˈfreɪd/", "adj:두려워하는"], ["after", "/ˈɑːf.tər/", "prep:~후에"],
+            ["afternoon", "/ˌɑːf.təˈnuːn/", "n:오후"], ["again", "/əˈɡen/", "adv:다시"], ["against", "/əˈɡenst/", "prep:~에 반대하여"], ["age", "/eɪdʒ/", "n:나이"], ["aged", "/eɪdʒd/", "adj:~세의"],
+            ["ago", "/əˈɡəʊ/", "adv:~전에"], ["agree", "/əˈɡriː/", "v:동의하다"], ["air", "/eər/", "n:공기, 항공"], ["airport", "/ˈeə.pɔːt/", "n:공항"], ["alarm", "/əˈlɑːm/", "n:경보, 자명종"],
+            ["album", "/ˈæl.bəm/", "n:앨범"], ["alike", "/əˈlaɪk/", "adj:비슷한"], ["alive", "/əˈlaɪv/", "adj:살아있는"], ["all", "/ɔːl/", "det:모든"], ["all right", "/ɔːl raɪt/", "adj:괜찮은"],
+            ["allow", "/əˈlaʊ/", "v:허락하다"], ["almost", "/ˈɔːl.məʊst/", "adv:거의"], ["alone", "/əˈləʊn/", "adj:혼자인"], ["along", "/əˈlɒŋ/", "prep:~을 따라"], ["aloud", "/əˈlaʊd/", "adv:소리내어"],
+            ["alphabet", "/ˈæl.fə.bet/", "n:알파벳"], ["already", "/ɔːlˈred.i/", "adv:이미"], ["also", "/ˈɔːl.səʊ/", "adv:또한"], ["although", "/ɔːlˈðəʊ/", "conj:비록 ~일지라도"], ["altogether", "/ˌɔːl.təˈɡeð.ər/", "adv:완전히"],
+            ["always", "/ˈɔːl.weɪz/", "adv:항상"], ["am", "/æm/", "v:이다 (1인칭)"], ["amazing", "/əˈmeɪ.zɪŋ/", "adj:놀라운"], ["ambition", "/æmˈbɪʃ.ən/", "n:야망"], ["ambulance", "/ˈæm.bjə.ləns/", "n:구급차"],
+            ["among", "/əˈmʌŋ/", "prep:~사이에"], ["amount", "/əˈmaʊnt/", "n:양"], ["amusing", "/əˈmjuː.zɪŋ/", "adj:재미있는"], ["ancient", "/ˈeɪn.ʃənt/", "adj:고대의"], ["and", "/ænd/", "conj:그리고"],
+            ["angry", "/ˈæŋ.ɡri/", "adj:화난"], ["animal", "/ˈæn.ɪ.məl/", "n:동물"], ["ankle", "/ˈæŋ.kəl/", "n:발목"], ["anniversary", "/ˌæn.ɪˈvɜː.sər.i/", "n:기념일"], ["announce", "/əˈnaʊns/", "v:발표하다"],
+            ["announcement", "/əˈnaʊns.mənt/", "n:발표"], ["annoy", "/əˈnɔɪ/", "v:짜증나게 하다"], ["annual", "/ˈæn.ju.əl/", "adj:매년의"], ["another", "/əˈnʌð.ər/", "det:또 다른"], ["answer", "/ˈɑːn.sər/", "n:대답", "v:대답하다"],
+            ["ant", "/ænt/", "n:개미"], ["anxious", "/ˈæŋk.ʃəs/", "adj:불안한"], ["any", "/ˈen.i/", "det:어떤"], ["anybody", "/ˈen.iˌbɒd.i/", "pron:누구든지"], ["anymore", "/ˌen.iˈmɔːr/", "adv:더 이상"],
+            ["anyone", "/ˈen.i.wʌn/", "pron:누구든지"], ["anything", "/ˈen.i.θɪŋ/", "pron:무엇이든지"], ["anyway", "/ˈen.i.weɪ/", "adv:어쨌든"], ["anywhere", "/ˈen.i.weər/", "adv:어디든지"], ["apart", "/əˈpɑːt/", "adv:떨어져"],
+            ["apartment", "/əˈpɑːt.mənt/", "n:아파트"], ["apologize", "/əˈpɒl.ə.dʒaɪz/", "v:사과하다"], ["appearance", "/əˈpɪə.rəns/", "n:외모"], ["apple", "/ˈæp.l/", "n:사과"], ["application", "/ˌæp.lɪˈkeɪ.ʃən/", "n:신청"],
+            ["apply", "/əˈplaɪ/", "v:신청하다"], ["appointment", "/əˈpɔɪnt.mənt/", "n:약속"], ["approach", "/əˈprəʊtʃ/", "v:접근하다"], ["approve", "/əˈpruːv/", "v:승인하다"], ["architect", "/ˈɑː.kɪ.tekt/", "n:건축가"],
+            ["architecture", "/ˈɑː.kɪ.tek.tʃər/", "n:건축"], ["area", "/ˈeə.ri.ə/", "n:지역"], ["argue", "/ˈɑːɡ.juː/", "v:논쟁하다"], ["argument", "/ˈɑːɡ.jə.mənt/", "n:논쟁"], ["arm", "/ɑːm/", "n:팔"],
+            ["armchair", "/ˈɑːm.tʃeər/", "n:안락의자"], ["army", "/ˈɑː.mi/", "n:군대"], ["around", "/əˈraʊnd/", "prep:주위에"], ["arrange", "/əˈreɪndʒ/", "v:배열하다, 준비하다"], ["arrangement", "/əˈreɪndʒ.mənt/", "n:배열, 합의"],
+            ["arrest", "/əˈrest/", "v:체포하다"], ["arrival", "/əˈraɪ.vəl/", "n:도착"], ["arrive", "/əˈraɪv/", "v:도착하다"], ["art", "/ɑːt/", "n:예술"], ["article", "/ˈɑː.tɪ.kəl/", "n:기사"],
+            ["artist", "/ˈɑː.tɪst/", "n:예술가"], ["as", "/æz/", "prep:~로서", "conj:~할 때"], ["ashamed", "/əˈʃeɪmd/", "adj:부끄러운"], ["ask", "/ɑːsk/", "v:묻다, 요청하다"], ["asleep", "/əˈsliːp/", "adj:잠든"],
+            ["aspirin", "/ˈæs.prɪn/", "n:아스피린"], ["assistant", "/əˈsɪs.tənt/", "n:조수"], ["at", "/æt/", "prep:~에"], ["athlete", "/ˈæθ.liːt/", "n:운동선수"], ["attack", "/əˈtæk/", "v:공격하다", "n:공격"],
+            ["attend", "/əˈtend/", "v:참석하다"], ["attention", "/əˈten.ʃən/", "n:주의"], ["attitude", "/ˈæt.ɪ.tʃuːd/", "n:태도"], ["attract", "/əˈtrækt/", "v:끌다"], ["attractive", "/əˈtræk.tɪv/", "adj:매력적인"],
+            ["audience", "/ˈɔː.di.əns/", "n:청중"], ["august", "/ɔːˈɡʌst/", "n:8월"], ["aunt", "/ɑːnt/", "n:이모, 고모"], ["author", "/ˈɔː.θər/", "n:작가"], ["autumn", "/ˈɔː.təm/", "n:가을"],
+            ["available", "/əˈveɪ.lə.bəl/", "adj:이용 가능한"], ["average", "/ˈæv.ər.ɪdʒ/", "adj:평균의"], ["avoid", "/əˈvɔɪd/", "v:피하다"], ["awake", "/əˈweɪk/", "adj:깨어있는"], ["away", "/əˈweɪ/", "adv:떨어져"],
+            ["awful", "/ˈɔː.fəl/", "adj:끔찍한"], ["baby", "/ˈbeɪ.bi/", "n:아기"], ["babysit", "/ˈbeɪ.bi.sɪt/", "v:아이를 봐주다"], ["back", "/bæk/", "n:등, 뒤", "adv:뒤로"], ["background", "/ˈbæk.ɡraʊnd/", "n:배경"],
+            ["backpack", "/ˈbæk.pæk/", "n:배낭"], ["backwards", "/ˈbæk.wədz/", "adv:뒤로"], ["bacon", "/ˈbeɪ.kən/", "n:베이컨"], ["bad", "/bæd/", "adj:나쁜"], ["badly", "/ˈbæd.li/", "adv:나쁘게"],
+            ["badminton", "/ˈbæd.mɪn.tən/", "n:배드민턴"], ["bag", "/bæɡ/", "n:가방"], ["baggage", "/ˈbæɡ.ɪdʒ/", "n:수하물"], ["bake", "/beɪk/", "v:굽다"], ["baker", "/ˈbeɪ.kər/", "n:제빵사"],
+            ["balcony", "/ˈbæl.kə.ni/", "n:발코니"], ["bald", "/bɔːld/", "adj:대머리의"], ["ball", "/bɔːl/", "n:공"], ["ballet", "/ˈbæl.eɪ/", "n:발레"], ["balloon", "/bəˈluːn/", "n:풍선"],
+            ["banana", "/bəˈnɑː.nə/", "n:바나나"], ["band", "/bænd/", "n:밴드"], ["bandage", "/ˈbæn.dɪdʒ/", "n:붕대"], ["bank", "/bæŋk/", "n:은행"], ["bar", "/bɑːr/", "n:바, 막대"],
+            ["barbecue", "/ˈbɑː.bɪ.kjuː/", "n:바비큐"], ["baseball", "/ˈbeɪs.bɔːl/", "n:야구"], ["basic", "/ˈbeɪ.sɪk/", "adj:기본적인"], ["basically", "/ˈbeɪ.sɪ.kəl.i/", "adv:기본적으로"], ["basin", "/ˈbeɪ.sən/", "n:대야, 분지"],
+            ["basket", "/ˈbɑː.skɪt/", "n:바구니"], ["basketball", "/ˈbɑː.skɪt.bɔːl/", "n:농구"], ["bat", "/bæt/", "n:방망이, 박쥐"], ["bath", "/bɑːθ/", "n:목욕"], ["bathroom", "/ˈbɑːθ.ruːm/", "n:욕실"],
+            ["battery", "/ˈbæt.ər.i/", "n:배터리"], ["battle", "/ˈbæt.əl/", "n:전투"], ["bay", "/beɪ/", "n:만"], ["be", "/biː/", "v:이다, 있다"], ["beach", "/biːtʃ/", "n:해변"],
+            ["beak", "/biːk/", "n:부리"], ["bean", "/biːn/", "n:콩"], ["bear", "/beər/", "n:곰", "v:참다"], ["beard", "/bɪəd/", "n:턱수염"], ["beat", "/biːt/", "v:이기다, 때리다"],
+            ["beautiful", "/ˈbjuː.tɪ.fəl/", "adj:아름다운"], ["beauty", "/ˈbjuː.ti/", "n:아름다움"], ["because", "/bɪˈkɒz/", "conj:때문에"], ["become", "/bɪˈkʌm/", "v:되다"], ["bed", "/bed/", "n:침대"],
+            ["bedroom", "/ˈbed.ruːm/", "n:침실"], ["bee", "/biː/", "n:벌"], ["beef", "/biːf/", "n:소고기"], ["beer", "/bɪər/", "n:맥주"], ["before", "/bɪˈfɔːr/", "prep:전에"],
+            ["begin", "/bɪˈɡɪn/", "v:시작하다"], ["beginner", "/bɪˈɡɪn.ər/", "n:초보자"], ["beginning", "/bɪˈɡɪn.ɪŋ/", "n:시작"], ["behave", "/bɪˈheɪv/", "v:행동하다"], ["behaviour", "/bɪˈheɪ.vjər/", "n:행동"],
+            ["behind", "/bɪˈhaɪnd/", "prep:뒤에"], ["believe", "/bɪˈliːv/", "v:믿다"], ["bell", "/bel/", "n:종"], ["belong", "/bɪˈlɒŋ/", "v:속하다"], ["below", "/bɪˈləʊ/", "prep:아래에"],
+            ["belt", "/belt/", "n:벨트"], ["bench", "/bentʃ/", "n:벤치"], ["bend", "/bend/", "v:구부리다"], ["beneath", "/bɪˈniːθ/", "prep:아래에"], ["benefit", "/ˈben.ɪ.fɪt/", "n:이득"],
+            ["beside", "/bɪˈsaɪd/", "prep:옆에"], ["best", "/best/", "adj:최고의"], ["bet", "/bet/", "v:내기하다"], ["better", "/ˈbet.ər/", "adj:더 좋은"], ["between", "/bɪˈtwiːn/", "prep:사이에"],
+            ["beyond", "/biˈjɒnd/", "prep:너머에"], ["bicycle", "/ˈbaɪ.sɪ.kəl/", "n:자전거"], ["big", "/bɪɡ/", "adj:큰"], ["bike", "/baɪk/", "n:자전거"], ["bill", "/bɪl/", "n:청구서, 지폐"],
+            ["bin", "/bɪn/", "n:쓰레기통"], ["biography", "/baɪˈɒɡ.rə.fi/", "n:전기"], ["biology", "/baɪˈɒl.ə.dʒi/", "n:생물학"], ["bird", "/bɜːd/", "n:새"], ["birth", "/bɜːθ/", "n:탄생"],
+            ["birthday", "/ˈbɜːθ.deɪ/", "n:생일"], ["biscuit", "/ˈbɪs.kɪt/", "n:비스킷"], ["bit", "/bɪt/", "n:조금"], ["bite", "/baɪt/", "v:물다"], ["bitter", "/ˈbɪt.ər/", "adj:쓴"],
+            ["black", "/blæk/", "adj:검은"], ["blackboard", "/ˈblæk.bɔːd/", "n:칠판"], ["blame", "/bleɪm/", "v:비난하다"], ["blank", "/blæŋk/", "adj:빈"], ["blanket", "/ˈblæŋ.kɪt/", "n:담요"],
+            ["bleed", "/bliːd/", "v:피가 나다"], ["blind", "/blaɪnd/", "adj:눈먼"], ["block", "/blɒk/", "n:블록", "v:막다"], ["blog", "/blɒɡ/", "n:블로그"], ["blonde", "/blɒnd/", "adj:금발의"],
+            ["blood", "/blʌd/", "n:피"], ["blouse", "/blaʊz/", "n:블라우스"], ["blow", "/bləʊ/", "v:불다"], ["blue", "/bluː/", "adj:파란"], ["board", "/bɔːd/", "n:판, 탑승하다"],
+            ["boat", "/bəʊt/", "n:보트"], ["body", "/ˈbɒd.i/", "n:몸"], ["boil", "/bɔɪl/", "v:끓다"], ["bomb", "/bɒm/", "n:폭탄"], ["bone", "/bəʊn/", "n:뼈"],
+            ["book", "/bʊk/", "n:책", "v:예약하다"], ["booking", "/ˈbʊk.ɪŋ/", "n:예약"], ["boot", "/buːt/", "n:부츠, 트렁크"], ["border", "/ˈbɔː.dər/", "n:국경"], ["bored", "/bɔːd/", "adj:지루해하는"],
+            ["boring", "/ˈbɔː.rɪŋ/", "adj:지루한"], ["born", "/bɔːn/", "adj:태어난"], ["borrow", "/ˈbɒr.əʊ/", "v:빌리다"], ["boss", "/bɒs/", "n:상사"], ["both", "/bəʊθ/", "det:둘 다"],
+            ["bother", "/ˈbɒð.ər/", "v:괴롭히다, 신경 쓰다"], ["bottle", "/ˈbɒt.əl/", "n:병"], ["bottom", "/ˈbɒt.əm/", "n:바닥"], ["bowl", "/bəʊl/", "n:그릇"], ["box", "/bɒks/", "n:상자"],
+            ["boy", "/bɔɪ/", "n:소년"], ["boyfriend", "/ˈbɔɪ.frend/", "n:남자친구"], ["brain", "/breɪn/", "n:뇌"], ["brake", "/breɪk/", "n:브레이크"], ["branch", "/brɑːntʃ/", "n:나뭇가지, 지점"],
+            ["brand", "/brænd/", "n:상표"], ["brave", "/breɪv/", "adj:용감한"], ["bread", "/bred/", "n:빵"], ["break", "/breɪk/", "v:깨다, 휴식하다"], ["breakfast", "/ˈbrek.fəst/", "n:아침식사"],
+            ["breast", "/brest/", "n:가슴"], ["breath", "/breθ/", "n:숨"], ["breathe", "/briːð/", "v:숨쉬다"], ["brick", "/brɪk/", "n:벽돌"], ["bridge", "/brɪdʒ/", "n:다리"],
+            ["brief", "/briːf/", "adj:간단한"], ["bright", "/braɪt/", "adj:밝은"], ["brilliant", "/ˈbrɪl.jənt/", "adj:훌륭한"], ["bring", "/brɪŋ/", "v:가져오다"], ["broad", "/brɔːd/", "adj:넓은"],
+            ["broadcast", "/ˈbrɔːd.kɑːst/", "v:방송하다"], ["broken", "/ˈbrəʊ.kən/", "adj:부서진"], ["brother", "/ˈbrʌð.ər/", "n:형제"], ["brown", "/braʊn/", "adj:갈색의"], ["brush", "/brʌʃ/", "n:솔, v:솔질하다"],
+            ["bubble", "/ˈbʌb.əl/", "n:거품"], ["bucket", "/ˈbʌk.ɪt/", "n:양동이"], ["bug", "/bʌɡ/", "n:벌레"], ["build", "/bɪld/", "v:짓다"], ["building", "/ˈbɪl.dɪŋ/", "n:건물"],
+            ["bulb", "/bʌlb/", "n:전구"], ["bull", "/bʊl/", "n:황소"], ["bullet", "/ˈbʊl.ɪt/", "n:총알"], ["bunch", "/bʌntʃ/", "n:다발"], ["burn", "/bɜːn/", "v:타다"],
+            ["bury", "/ˈberi/", "v:묻다"], ["bus", "/bʌs/", "n:버스"], ["bush", "/bʊʃ/", "n:덤불"], ["business", "/ˈbɪz.nɪs/", "n:사업"], ["businessman", "/ˈbɪz.nɪs.mæn/", "n:사업가"],
+            ["businesswoman", "/ˈbɪz.nɪsˌwʊm.ən/", "n:여성 사업가"], ["busy", "/ˈbɪz.i/", "adj:바쁜"], ["but", "/bʌt/", "conj:그러나"], ["butter", "/ˈbʌt.ər/", "n:버터"], ["button", "/ˈbʌt.ən/", "n:단추"],
+            ["buy", "/baɪ/", "v:사다"], ["buyer", "/ˈbaɪ.ər/", "n:구매자"], ["by", "/baɪ/", "prep:의해"], ["bye", "/baɪ/", "int:안녕"], ["cabinet", "/ˈkæb.ɪ.nət/", "n:캐비닛"],
+            ["cable", "/ˈkeɪ.bəl/", "n:케이블"], ["cafe", "/ˈkæf.eɪ/", "n:카페"], ["cage", "/keɪdʒ/", "n:새장"], ["cake", "/keɪk/", "n:케이크"], ["calculator", "/ˈkæl.kjə.leɪ.tər/", "n:계산기"],
+            ["calendar", "/ˈkæl.ən.dər/", "n:달력"], ["calf", "/kɑːf/", "n:송아지"], ["call", "/kɔːl/", "v:전화하다"], ["calm", "/kɑːm/", "adj:차분한"], ["camel", "/ˈkæm.əl/", "n:낙타"],
+            ["camera", "/ˈkæm.rə/", "n:카메라"], ["camp", "/kæmp/", "n:캠프"], ["camping", "/ˈkæm.pɪŋ/", "n:캠핑"], ["can", "/kæn/", "v:할 수 있다"], ["canal", "/kəˈnæl/", "n:운하"],
+            ["cancel", "/ˈkæn.səl/", "v:취소하다"], ["cancer", "/ˈkæn.sər/", "n:암"], ["candidate", "/ˈkæn.dɪ.dət/", "n:후보자"], ["candle", "/ˈkæn.dəl/", "n:양초"], ["candy", "/ˈkæn.di/", "n:사탕"],
+            ["canteen", "/kænˈtiːn/", "n:매점"], ["cap", "/kæp/", "n:모자"], ["capital", "/ˈkæp.ɪ.təl/", "n:수도"], ["captain", "/ˈkæp.tɪn/", "n:선장"], ["car", "/kɑːr/", "n:자동차"],
+            ["card", "/kɑːd/", "n:카드"], ["care", "/keər/", "n:돌봄"], ["career", "/kəˈrɪər/", "n:경력"], ["careful", "/ˈkeə.fəl/", "adj:조심스러운"], ["carefully", "/ˈkeə.fəl.i/", "adv:조심스럽게"],
+            ["careless", "/ˈkeə.ləs/", "adj:부주의한"], ["carpet", "/ˈkɑː.pɪt/", "n:카펫"], ["carrot", "/ˈkær.ət/", "n:당근"], ["carry", "/ˈkær.i/", "v:나르다"], ["cartoon", "/kɑːˈtuːn/", "n:만화"],
+            ["case", "/keɪs/", "n:경우"], ["cash", "/kæʃ/", "n:현금"], ["castle", "/ˈkɑː.səl/", "n:성"], ["cat", "/kæt/", "n:고양이"], ["catch", "/kætʃ/", "v:잡다"],
+            ["category", "/ˈkæt.ə.ɡri/", "n:범주"], ["cattle", "/ˈkæt.əl/", "n:소"], ["cause", "/kɔːz/", "n:원인"], ["cd", "/ˌsiːˈdiː/", "n:CD"], ["ceiling", "/ˈsiː.lɪŋ/", "n:천장"],
+            ["celebrate", "/ˈsel.ə.breɪt/", "v:축하하다"], ["celebration", "/ˌsel.əˈbreɪ.ʃən/", "n:축하"], ["celebrity", "/səˈleb.rə.ti/", "n:유명인"], ["cell", "/sel/", "n:세포"], ["cent", "/sent/", "n:센트"],
+            ["central", "/ˈsen.trəl/", "adj:중심의"], ["centre", "/ˈsen.tər/", "n:중심"], ["century", "/ˈsen.tʃər.i/", "n:세기"], ["ceremony", "/ˈser.ɪ.mə.ni/", "n:의식"], ["certain", "/ˈsɜː.tən/", "adj:확실한"],
+            ["certainly", "/ˈsɜː.tən.li/", "adv:확실히"], ["certificate", "/səˈtɪf.ɪ.kət/", "n:증명서"], ["chain", "/tʃeɪn/", "n:사슬"], ["chair", "/tʃeər/", "n:의자"], ["chairman", "/ˈtʃeə.mən/", "n:의장"],
+            ["challenge", "/ˈtʃæl.ɪndʒ/", "n:도전"], ["champion", "/ˈtʃæm.pi.ən/", "n:챔피언"], ["chance", "/tʃɑːns/", "n:기회"], ["change", "/tʃeɪndʒ/", "v:바꾸다"], ["channel", "/ˈtʃæn.əl/", "n:채널"],
+            ["chapter", "/ˈtʃæp.tər/", "n:장"], ["character", "/ˈkær.ək.tər/", "n:성격"], ["charge", "/tʃɑːdʒ/", "v:청구하다"], ["charity", "/ˈtʃær.ə.ti/", "n:자선"], ["chart", "/tʃɑːt/", "n:도표"],
+            ["chat", "/tʃæt/", "v:수다떨다"], ["cheap", "/tʃiːp/", "adj:싼"], ["cheat", "/tʃiːt/", "v:속이다"], ["check", "/tʃek/", "v:확인하다"], ["cheerful", "/ˈtʃɪə.fəl/", "adj:발랄한"],
+            ["cheese", "/tʃiːz/", "n:치즈"], ["chef", "/ʃef/", "n:요리사"], ["chemical", "/ˈkem.ɪ.kəl/", "adj:화학의"], ["chemistry", "/ˈkem.ɪ.stri/", "n:화학"], ["cheque", "/tʃek/", "n:수표"],
+            ["chess", "/tʃes/", "n:체스"], ["chest", "/tʃest/", "n:가슴"], ["chicken", "/ˈtʃɪk.ɪn/", "n:닭"], ["chief", "/tʃiːf/", "adj:주요한"], ["child", "/tʃaɪld/", "n:아이"],
+            ["childhood", "/ˈtʃaɪld.hʊd/", "n:어린 시절"], ["chili", "/ˈtʃɪl.i/", "n:칠리"], ["chimney", "/ˈtʃɪm.ni/", "n:굴뚝"], ["chin", "/tʃɪn/", "n:턱"], ["chip", "/tʃɪp/", "n:칩"],
+            ["chocolate", "/ˈtʃɒk.lət/", "n:초콜릿"], ["choice", "/tʃɔɪs/", "n:선택"], ["choose", "/tʃuːz/", "v:선택하다"], ["church", "/tʃɜːtʃ/", "n:교회"], ["cigarette", "/ˌsɪɡ.ərˈet/", "n:담배"],
+            ["cinema", "/ˈsɪn.ə.mə/", "n:영화관"], ["circle", "/ˈsɜː.kəl/", "n:원"], ["circus", "/ˈsɜː.kəs/", "n:서커스"], ["citizen", "/ˈsɪt.ɪ.zən/", "n:시민"], ["city", "/ˈsɪt.i/", "n:도시"],
+            ["civil", "/ˈsɪv.əl/", "adj:시민의"], ["claim", "/kleɪm/", "v:주장하다"], ["clap", "/klæp/", "v:박수치다"], ["class", "/klɑːs/", "n:수업"], ["classic", "/ˈklæs.ɪk/", "adj:고전적인"],
+            ["classical", "/ˈklæs.ɪ.kəl/", "adj:클래식의"], ["classroom", "/ˈklɑːs.ruːm/", "n:교실"], ["clean", "/kliːn/", "adj:깨끗한"], ["cleaner", "/ˈkliː.nər/", "n:청소부"], ["clear", "/klɪər/", "adj:맑은"],
+            ["clearly", "/ˈklɪə.li/", "adv:분명히"], ["clerk", "/klɑːk/", "n:점원"], ["clever", "/ˈklev.ər/", "adj:영리한"], ["click", "/klɪk/", "v:클릭하다"], ["client", "/ˈklaɪ.ənt/", "n:고객"],
+            ["climate", "/ˈklaɪ.mət/", "n:기후"], ["climb", "/klaɪm/", "v:오르다"], ["climbing", "/ˈklaɪ.mɪŋ/", "n:등산"], ["clock", "/klɒk/", "n:시계"], ["close", "/kləʊz/", "v:닫다"],
+            ["closed", "/kləʊzd/", "adj:닫힌"], ["closet", "/ˈklɒz.ɪt/", "n:벽장"], ["cloth", "/klɒθ/", "n:천"], ["clothes", "/kləʊðz/", "n:옷"], ["clothing", "/ˈkləʊ.ðɪŋ/", "n:의류"],
+            ["cloud", "/klaʊd/", "n:구름"], ["cloudy", "/ˈklaʊ.di/", "adj:흐린"], ["clown", "/klaʊn/", "n:광대"], ["club", "/klʌb/", "n:클럽"], ["coach", "/kəʊtʃ/", "n:코치"],
+            ["coal", "/kəʊl/", "n:석탄"], ["coast", "/kəʊst/", "n:해안"], ["coat", "/kəʊt/", "n:코트"], ["code", "/kəʊd/", "n:코드"], ["coffee", "/ˈkɒf.i/", "n:커피"],
+            ["coin", "/kɔɪn/", "n:동전"], ["cold", "/kəʊld/", "adj:추운"], ["colleague", "/ˈkɒl.iːɡ/", "n:동료"], ["collect", "/kəˈlekt/", "v:수집하다"], ["collection", "/kəˈlek.ʃən/", "n:수집품"],
+            ["college", "/ˈkɒl.ɪdʒ/", "n:대학"], ["colour", "/ˈkʌl.ər/", "n:색깔"], ["comb", "/kəʊm/", "n:빗"], ["combination", "/ˌkɒm.bɪˈneɪ.ʃən/", "n:조합"], ["combine", "/kəmˈbaɪn/", "v:결합하다"],
+            ["come", "/kʌm/", "v:오다"], ["comedy", "/ˈkɒm.ə.di/", "n:코미디"], ["comfort", "/ˈkʌm.fət/", "n:편안함"], ["comfortable", "/ˈkʌm.fə.tə.bəl/", "adj:편안한"], ["command", "/kəˈmɑːnd/", "n:명령"],
+            ["comment", "/ˈkɒm.ent/", "n:논평"], ["commercial", "/kəˈmɜː.ʃəl/", "adj:상업적인"], ["commission", "/kəˈmɪʃ.ən/", "n:위원회"], ["commit", "/kəˈmɪt/", "v:저지르다"], ["committee", "/kəˈmɪt.i/", "n:위원회"],
+            ["common", "/ˈkɒm.ən/", "adj:흔한"], ["communicate", "/kəˈmjuː.nɪ.keɪt/", "v:의사소통하다"], ["communication", "/kəˌmjuː.nɪˈkeɪ.ʃən/", "n:의사소통"], ["community", "/kəˈmjuː.nə.ti/", "n:공동체"], ["company", "/ˈkʌm.pə.ni/", "n:회사"],
+            ["compare", "/kəmˈpeər/", "v:비교하다"], ["comparison", "/kəmˈpær.ɪ.sən/", "n:비교"], ["compete", "/kəmˈpiːt/", "v:경쟁하다"], ["competition", "/ˌkɒm.pəˈtɪʃ.ən/", "n:경쟁"], ["competitive", "/kəmˈpet.ɪ.tɪv/", "adj:경쟁적인"],
+            ["complain", "/kəmˈpleɪn/", "v:불평하다"], ["complaint", "/kəmˈpleɪnt/", "n:불평"], ["complete", "/kəmˈpliːt/", "v:완료하다"], ["completely", "/kəmˈpliːt.li/", "adv:완전히"], ["complex", "/ˈkɒm.pleks/", "adj:복잡한"],
+            ["complicated", "/ˈkɒm.plɪ.keɪ.tɪd/", "adj:복잡한"], ["computer", "/kəmˈpjuː.tər/", "n:컴퓨터"], ["concentrate", "/ˈkɒn.sən.treɪt/", "v:집중하다"], ["concert", "/ˈkɒn.sət/", "n:콘서트"], ["conclude", "/kənˈkluːd/", "v:결론짓다"],
+            ["conclusion", "/kənˈkluː.ʒən/", "n:결론"], ["condition", "/kənˈdɪʃ.ən/", "n:상태"], ["conference", "/ˈkɒn.fər.əns/", "n:회의"], ["confident", "/ˈkɒn.fɪ.dənt/", "adj:자신감 있는"], ["confirm", "/kənˈfɜːm/", "v:확인하다"],
+            ["confuse", "/kənˈfjuːz/", "v:혼란스럽게 하다"], ["confused", "/kənˈfjuːzd/", "adj:혼란스러운"], ["confusing", "/kənˈfjuː.zɪŋ/", "adj:혼란스러운"], ["connect", "/kəˈnekt/", "v:연결하다"], ["connection", "/kəˈnek.ʃən/", "n:연결"],
+            ["conscious", "/ˈkɒn.ʃəs/", "adj:의식하는"], ["consequence", "/ˈkɒn.sɪ.kwəns/", "n:결과"], ["consist", "/kənˈsɪst/", "v:구성되다"], ["consume", "/kənˈsjuːm/", "v:소비하다"], ["consumer", "/kənˈsjuː.mər/", "n:소비자"],
+            ["contact", "/ˈkɒn.tækt/", "n:접촉"], ["contain", "/kənˈteɪn/", "v:포함하다"], ["container", "/kənˈteɪ.nər/", "n:용기"], ["contemporary", "/kənˈtem.pər.ər.i/", "adj:현대의"], ["content", "/ˈkɒn.tent/", "n:내용"],
+            ["contest", "/ˈkɒn.test/", "n:대회"], ["continent", "/ˈkɒn.tɪ.nənt/", "n:대륙"], ["continue", "/kənˈtɪn.juː/", "v:계속하다"], ["continuous", "/kənˈtɪn.ju.əs/", "adj:연속적인"], ["contract", "/ˈkɒn.trækt/", "n:계약"],
+            ["contrast", "/ˈkɒn.trɑːst/", "n:대조"], ["contribute", "/kənˈtrɪb.juːt/", "v:기여하다"], ["contribution", "/ˌkɒn.trɪˈbjuː.ʃən/", "n:기여"], ["control", "/kənˈtrəʊl/", "n:통제"], ["convenient", "/kənˈviː.ni.ənt/", "adj:편리한"],
+            ["conversation", "/ˌkɒn.vəˈseɪ.ʃən/", "n:대화"], ["convert", "/kənˈvɜːt/", "v:전환하다"], ["convince", "/kənˈvɪns/", "v:설득하다"], ["cook", "/kʊk/", "v:요리하다"], ["cooker", "/ˈkʊk.ər/", "n:조리기구"],
+            ["cookie", "/ˈkʊk.i/", "n:쿠키"], ["cooking", "/ˈkʊk.ɪŋ/", "n:요리"], ["cool", "/kuːl/", "adj:시원한"], ["copy", "/ˈkɒp.i/", "n:복사본"], ["corn", "/kɔːn/", "n:옥수수"],
+            ["corner", "/ˈkɔː.nər/", "n:모퉁이"], ["correct", "/kəˈrekt/", "adj:정확한"], ["cost", "/kɒst/", "n:비용"], ["costume", "/ˈkɒs.tjuːm/", "n:의상"], ["cottage", "/ˈkɒt.ɪdʒ/", "n:오두막"],
+            ["cotton", "/ˈkɒt.ən/", "n:면"], ["cough", "/kɒf/", "v:기침하다"], ["could", "/kʊd/", "v:할 수 있었다"], ["council", "/ˈkaʊn.səl/", "n:의회"], ["count", "/kaʊnt/", "v:세다"],
+            ["country", "/ˈkʌn.tri/", "n:나라"], ["countryside", "/ˈkʌn.tri.saɪd/", "n:시골"], ["county", "/ˈkaʊn.ti/", "n:주"], ["couple", "/ˈkʌp.əl/", "n:커플"], ["courage", "/ˈkʌr.ɪdʒ/", "n:용기"],
+            ["course", "/kɔːs/", "n:과정"], ["court", "/kɔːt/", "n:법원"], ["cousin", "/ˈkʌz.ən/", "n:사촌"], ["cover", "/ˈkʌv.ər/", "v:덮다"], ["covered", "/ˈkʌv.əd/", "adj:덮인"],
+            ["cow", "/kaʊ/", "n:소"], ["crash", "/kræʃ/", "n:충돌"], ["crazy", "/ˈkreɪ.zi/", "adj:미친"], ["cream", "/kriːm/", "n:크림"], ["create", "/kriˈeɪt/", "v:창조하다"],
+            ["creation", "/kriˈeɪ.ʃən/", "n:창조"], ["creative", "/kriˈeɪ.tɪv/", "adj:창의적인"], ["creature", "/ˈkriː.tʃər/", "n:생물"], ["credit", "/ˈkred.ɪt/", "n:신용"], ["crew", "/kruː/", "n:승무원"],
+            ["crime", "/kraɪm/", "n:범죄"], ["criminal", "/ˈkrɪm.ɪ.nəl/", "n:범죄자"], ["crisis", "/ˈkraɪ.sɪs/", "n:위기"], ["critic", "/ˈkrɪt.ɪk/", "n:비평가"], ["critical", "/ˈkrɪt.ɪ.kəl/", "adj:비판적인"],
+            ["criticism", "/ˈkrɪt.ɪ.sɪ.zəm/", "n:비판"], ["criticise", "/ˈkrɪt.ɪ.saɪz/", "v:비판하다"], ["crop", "/krɒp/", "n:작물"], ["cross", "/krɒs/", "v:건너다"], ["crowd", "/kraʊd/", "n:군중"],
+            ["crowded", "/ˈkraʊ.dɪd/", "adj:붐비는"], ["cruel", "/ˈkruː.əl/", "adj:잔인한"], ["cry", "/kraɪ/", "v:울다"], ["cultural", "/ˈkʌl.tʃər.əl/", "adj:문화의"], ["culture", "/ˈkʌl.tʃər/", "n:문화"],
+            ["cup", "/kʌp/", "n:컵"], ["cupboard", "/ˈkʌb.əd/", "n:찬장"], ["cure", "/kjʊər/", "v:치료하다"], ["curious", "/ˈkjʊə.ri.əs/", "adj:호기심 많은"], ["curl", "/kɜːl/", "v:곱슬거리다"],
+            ["curly", "/ˈkɜː.li/", "adj:곱슬머리의"], ["currency", "/ˈkʌr.ən.si/", "n:통화"], ["current", "/ˈkʌr.ənt/", "adj:현재의"], ["curtain", "/ˈkɜː.tən/", "n:커튼"], ["curve", "/kɜːv/", "n:곡선"],
+            ["curved", "/kɜːvd/", "adj:곡선의"], ["custom", "/ˈkʌs.təm/", "n:관습"], ["customer", "/ˈkʌs.tə.mər/", "n:고객"], ["cut", "/kʌt/", "v:자르다"], ["cycle", "/ˈsaɪ.kəl/", "n:자전거"],
+            ["dad", "/dæd/", "n:아빠"], ["daily", "/ˈdeɪ.li/", "adj:매일의"], ["damage", "/ˈdæm.ɪdʒ/", "n:피해"], ["dance", "/dɑːns/", "v:춤추다"], ["dancer", "/ˈdɑːn.sər/", "n:댄서"],
+            ["dancing", "/ˈdɑːn.sɪŋ/", "n:춤"], ["danger", "/ˈdeɪn.dʒər/", "n:위험"], ["dangerous", "/ˈdeɪn.dʒər.əs/", "adj:위험한"], ["dark", "/dɑːk/", "adj:어두운"], ["data", "/ˈdeɪ.tə/", "n:데이터"],
+            ["date", "/deɪt/", "n:날짜"], ["daughter", "/ˈdɔː.tər/", "n:딸"], ["day", "/deɪ/", "n:날"], ["dead", "/ded/", "adj:죽은"], ["deal", "/diːl/", "v:다루다"],
+            ["dear", "/dɪər/", "adj:친애하는"], ["death", "/deθ/", "n:죽음"], ["debate", "/dɪˈbeɪt/", "n:토론"], ["debt", "/det/", "n:빚"], ["decade", "/ˈdek.eɪd/", "n:10년"],
+            ["decay", "/dɪˈkeɪ/", "v:부패하다"], ["december", "/dɪˈsem.bər/", "n:12월"], ["decide", "/dɪˈsaɪd/", "v:결정하다"], ["decision", "/dɪˈsɪʒ.ən/", "n:결정"], ["declare", "/dɪˈkleər/", "v:선언하다"],
+            ["decline", "/dɪˈklaɪn/", "v:거절하다"], ["decorate", "/ˈdek.ə.reɪt/", "v:장식하다"], ["decoration", "/ˌdek.əˈreɪ.ʃən/", "n:장식"], ["decrease", "/dɪˈkriːs/", "v:감소하다"], ["deep", "/diːp/", "adj:깊은"],
+            ["deeply", "/ˈdiːp.li/", "adv:깊이"], ["defeat", "/dɪˈfiːt/", "v:패배시키다"], ["defence", "/dɪˈfens/", "n:방어"], ["defend", "/dɪˈfend/", "v:방어하다"], ["define", "/dɪˈfaɪn/", "v:정의하다"],
+            ["definite", "/ˈdef.ɪ.nət/", "adj:확실한"], ["definitely", "/ˈdef.ɪ.nət.li/", "adv:분명히"], ["definition", "/ˌdef.ɪˈnɪʃ.ən/", "n:정의"], ["degree", "/dɪˈɡriː/", "n:도"], ["delay", "/dɪˈleɪ/", "v:지연시키다"],
+            ["deliberate", "/dɪˈlɪb.ər.ət/", "adj:고의적인"], ["deliberately", "/dɪˈlɪb.ər.ət.li/", "adv:고의로"], ["delicious", "/dɪˈlɪʃ.əs/", "adj:맛있는"], ["delight", "/dɪˈlaɪt/", "n:기쁨"], ["delighted", "/dɪˈlaɪ.tɪd/", "adj:기뻐하는"],
+            ["deliver", "/dɪˈlɪv.ər/", "v:배달하다"], ["delivery", "/dɪˈlɪv.ər.i/", "n:배달"], ["demand", "/dɪˈmɑːnd/", "v:요구하다"], ["demonstrate", "/ˈdem.ən.streɪt/", "v:입증하다"], ["dentist", "/ˈden.tɪst/", "n:치과의사"],
+            ["deny", "/dɪˈnaɪ/", "v:부인하다"], ["department", "/dɪˈpɑːt.mənt/", "n:부서"], ["departure", "/dɪˈpɑː.tʃər/", "n:출발"], ["depend", "/dɪˈpend/", "v:의존하다"], ["depressed", "/dɪˈprest/", "adj:우울한"],
+            ["depressing", "/dɪˈpres.ɪŋ/", "adj:우울하게 하는"], ["depth", "/depθ/", "n:깊이"], ["describe", "/dɪˈskraɪb/", "v:묘사하다"], ["description", "/dɪˈskrɪp.ʃən/", "n:묘사"], ["desert", "/ˈdez.ət/", "n:사막"],
+            ["deserve", "/dɪˈzɜːv/", "v:받을 만하다"], ["design", "/dɪˈzaɪn/", "v:설계하다"], ["designer", "/dɪˈzaɪ.nər/", "n:디자이너"], ["desire", "/dɪˈzaɪər/", "n:욕망"], ["desk", "/desk/", "n:책상"],
+            ["desperate", "/ˈdes.pər.ət/", "adj:절망적인"], ["despite", "/dɪˈspaɪt/", "prep:에도 불구하고"], ["destination", "/ˌdes.tɪˈneɪ.ʃən/", "n:목적지"], ["destroy", "/dɪˈstrɔɪ/", "v:파괴하다"], ["detail", "/ˈdiː.teɪl/", "n:세부사항"],
+            ["detailed", "/ˈdiː.teɪld/", "adj:상세한"], ["detect", "/dɪˈtekt/", "v:발견하다"], ["detective", "/dɪˈtek.tɪv/", "n:탐정"], ["determine", "/dɪˈtɜː.mɪn/", "v:결정하다"], ["determined", "/dɪˈtɜː.mɪnd/", "adj:단호한"],
+            ["develop", "/dɪˈvel.əp/", "v:개발하다"], ["development", "/dɪˈvel.əp.mənt/", "n:발달"], ["device", "/dɪˈvaɪs/", "n:장치"], ["diagram", "/ˈdaɪ.ə.ɡræm/", "n:도표"], ["dialogue", "/ˈdaɪ.ə.lɒɡ/", "n:대화"],
+            ["diamond", "/ˈdaɪ.ə.mənd/", "n:다이아몬드"], ["diary", "/ˈdaɪ.ər.i/", "n:일기"], ["dictionary", "/ˈdɪk.ʃən.ər.i/", "n:사전"], ["die", "/daɪ/", "v:죽다"], ["diet", "/ˈdaɪ.ət/", "n:식단"],
             ["difference", "/ˈdɪf.ər.əns/", "n:차이"], ["different", "/ˈdɪf.ər.ənt/", "adj:다른"], ["differently", "/ˈdɪf.ər.ənt.li/", "adv:다르게"], ["difficult", "/ˈdɪf.ɪ.kəlt/", "adj:어려운"], ["difficulty", "/ˈdɪf.ɪ.kəl.ti/", "n:어려움"],
-            ["dig", "/dɪɡ/", "v:파다"], ["digital", "/ˈdɪdʒ.ɪ.təl/", "adj:디지털의"], ["dinner", "/ˈdɪn.ər/", "n:저녁식사"], ["direct", "/daɪˈrekt/", "adj:직접적인", "v:지시하다"], ["direction", "/daɪˈrek.ʃən/", "n:방향, 지시"],
-            ["directly", "/daɪˈrekt.li/", "adv:직접, 곧바로"], ["director", "/daɪˈrek.tər/", "n:감독, 이사"], ["dirt", "/dɜːt/", "n:먼지, 흙"], ["dirty", "/ˈdɜː.ti/", "adj:더러운"], ["disadvantage", "/ˌdɪs.ədˈvɑːn.tɪdʒ/", "n:불리한 점"],
+            ["dig", "/dɪɡ/", "v:파다"], ["digital", "/ˈdɪdʒ.ɪ.təl/", "adj:디지털의"], ["dinner", "/ˈdɪn.ər/", "n:저녁식사"], ["direct", "/daɪˈrekt/", "adj:직접적인"], ["direction", "/daɪˈrek.ʃən/", "n:방향"],
+            ["directly", "/daɪˈrekt.li/", "adv:직접"], ["director", "/daɪˈrek.tər/", "n:감독"], ["dirt", "/dɜːt/", "n:먼지"], ["dirty", "/ˈdɜː.ti/", "adj:더러운"], ["disadvantage", "/ˌdɪs.ədˈvɑːn.tɪdʒ/", "n:불리한 점"],
             ["disagree", "/ˌdɪs.əˈɡriː/", "v:동의하지 않다"], ["disappear", "/ˌdɪs.əˈpɪər/", "v:사라지다"], ["disappoint", "/ˌdɪs.əˈpɔɪnt/", "v:실망시키다"], ["disappointed", "/ˌdɪs.əˈpɔɪn.tɪd/", "adj:실망한"], ["disappointing", "/ˌdɪs.əˈpɔɪn.tɪŋ/", "adj:실망스러운"],
-            ["disaster", "/dɪˈzɑː.stər/", "n:재앙"], ["disc", "/dɪsk/", "n:디스크, 원반"], ["discipline", "/ˈdɪs.ə.plɪn/", "n:규율, 훈육"], ["discount", "/ˈdɪs.kaʊnt/", "n:할인"], ["discover", "/dɪˈskʌv.ər/", "v:발견하다"],
-            ["discovery", "/dɪˈskʌv.ər.i/", "n:발견"], ["discuss", "/dɪˈskʌs/", "v:토론하다"], ["discussion", "/dɪˈskʌʃ.ən/", "n:토론"], ["disease", "/dɪˈziːz/", "n:질병"], ["dish", "/dɪʃ/", "n:접시, 요리"],
-            ["dishonest", "/dɪˈsɒn.ɪst/", "adj:정직하지 못한"], ["disk", "/dɪsk/", "n:디스크"], ["dislike", "/dɪsˈlaɪk/", "v:싫어하다"], ["dismiss", "/dɪˈsmɪs/", "v:묵살하다, 해고하다"], ["display", "/dɪˈspleɪ/", "v:전시하다", "n:전시"],
-            ["distance", "/ˈdɪs.təns/", "n:거리"], ["distant", "/ˈdɪs.tənt/", "adj:먼"], ["distinct", "/dɪˈstɪŋkt/", "adj:뚜렷한, 별개의"], ["distribute", "/dɪˈstrɪb.juːt/", "v:분배하다"], ["distribution", "/ˌdɪs.trɪˈbjuː.ʃən/", "n:분배"],
-            ["district", "/ˈdɪs.trɪkt/", "n:구역, 지역"], ["disturb", "/dɪˈstɜːb/", "v:방해하다"], ["divide", "/dɪˈvaɪd/", "v:나누다"], ["division", "/dɪˈvɪʒ.ən/", "n:분할, 부서"], ["divorce", "/dɪˈvɔːs/", "n:이혼", "v:이혼하다"],
-            ["do", "/duː/", "v:하다"], ["doctor", "/ˈdɒk.tər/", "n:의사"], ["document", "/ˈdɒk.jə.mənt/", "n:문서"], ["dog", "/dɒɡ/", "n:개"], ["doll", "/dɒl/", "n:인형"],
-            ["dollar", "/ˈdɒl.ər/", "n:달러"], ["domestic", "/dəˈmes.tɪk/", "adj:가정의, 국내의"], ["dominate", "/ˈdɒm.ɪ.neɪt/", "v:지배하다"], ["door", "/dɔːr/", "n:문"], ["double", "/ˈdʌb.əl/", "adj:두 배의"],
-            ["doubt", "/daʊt/", "n:의심", "v:의심하다"], ["down", "/daʊn/", "adv:아래로", "prep:아래에"], ["downstairs", "/ˌdaʊnˈsteəz/", "adv:아래층으로"], ["downtown", "/ˌdaʊnˈtaʊn/", "adv:시내에", "n:시내"], ["dozen", "/ˈdʌz.ən/", "n:12개, 다스"],
-            ["draft", "/drɑːft/", "n:초안"], ["drag", "/dræɡ/", "v:끌다"], ["drama", "/ˈdrɑː.mə/", "n:드라마, 연극"], ["dramatic", "/drəˈmæt.ɪk/", "adj:극적인"], ["dramatically", "/drəˈmæt.ɪ.kəl.i/", "adv:극적으로"],
-            ["draw", "/drɔː/", "v:그리다, 끌다"], ["drawing", "/ˈdrɔː.ɪŋ/", "n:그림"], ["dream", "/driːm/", "n:꿈", "v:꿈꾸다"], ["dress", "/dres/", "n:드레스, 원피스", "v:옷을 입다"], ["dressed", "/drest/", "adj:옷을 입은"],
-            ["drink", "/drɪŋk/", "v:마시다", "n:음료"], ["drive", "/draɪv/", "v:운전하다"], ["driver", "/ˈdraɪ.vər/", "n:운전사"], ["driving", "/ˈdraɪ.vɪŋ/", "n:운전"], ["drop", "/drɒp/", "v:떨어뜨리다", "n:방울"],
-            ["drug", "/drʌɡ/", "n:약, 마약"], ["drum", "/drʌm/", "n:드럼, 북"], ["drunk", "/drʌŋk/", "adj:술 취한"], ["dry", "/draɪ/", "adj:마른", "v:말리다"], ["duck", "/dʌk/", "n:오리"],
-            ["due", "/djuː/", "adj:예정된, ~때문에"], ["dull", "/dʌl/", "adj:지루한, 흐릿한"], ["dump", "/dʌmp/", "v:버리다"], ["during", "/ˈdʒʊə.rɪŋ/", "prep:~동안"], ["dust", "/dʌst/", "n:먼지"],
-            ["duty", "/ˈdʒuː.ti/", "n:의무"], ["dvd", "/ˌdiː.viːˈdiː/", "n:DVD"], ["each", "/iːtʃ/", "det:각각의"], ["ear", "/ɪər/", "n:귀"], ["early", "/ˈɜː.li/", "adj:일찍, 이른"],
-            ["earn", "/ɜːn/", "v:벌다"], ["earth", "/ɜːθ/", "n:지구, 땅"], ["ease", "/iːz/", "n:쉬움, 편안함"], ["easily", "/ˈiː.zəl.i/", "adv:쉽게"], ["east", "/iːst/", "n:동쪽"],
-            ["eastern", "/ˈiː.stən/", "adj:동쪽의"], ["easy", "/ˈiː.zi/", "adj:쉬운"], ["eat", "/iːt/", "v:먹다"], ["economic", "/iː.kəˈnɒm.ɪk/", "adj:경제의"], ["economy", "/iˈkɒn.ə.mi/", "n:경제"],
-            ["edge", "/edʒ/", "n:가장자리"], ["edit", "/ˈed.ɪt/", "v:편집하다"], ["edition", "/ɪˈdɪʃ.ən/", "n:판, 호"], ["editor", "/ˈed.ɪ.tər/", "n:편집자"], ["educate", "/ˈed.jʊ.keɪt/", "v:교육하다"],
-            ["educated", "/ˈed.jʊ.keɪ.tɪd/", "adj:교육받은"], ["education", "/ˌed.jʊˈkeɪ.ʃən/", "n:교육"], ["educational", "/ˌed.jʊˈkeɪ.ʃən.əl/", "adj:교육적인"], ["effect", "/ɪˈfekt/", "n:효과, 영향"], ["effective", "/ɪˈfek.tɪv/", "adj:효과적인"],
-            ["effectively", "/ɪˈfek.tɪv.li/", "adv:효과적으로"], ["efficient", "/ɪˈfɪʃ.ənt/", "adj:효율적인"], ["effort", "/ˈef.ət/", "n:노력"], ["egg", "/eɡ/", "n:달걀"], ["eight", "/eɪt/", "num:8, 여덟"],
-            ["eighteen", "/ˌeɪˈtiːn/", "num:18, 열여덟"], ["eighty", "/ˈeɪ.ti/", "num:80, 여든"], ["either", "/ˈaɪ.ðər/", "det:어느 하나, ~도 또한"], ["elderly", "/ˈel.dəl.i/", "adj:연세가 드신"], ["elect", "/iˈlekt/", "v:선출하다"],
-            ["election", "/iˈlek.ʃən/", "n:선거"], ["electric", "/iˈlek.trɪk/", "adj:전기의"], ["electrical", "/iˈlek.trɪ.kəl/", "adj:전기의 (관련된)"], ["electricity", "/ɪˌlekˈtrɪs.ə.ti/", "n:전기"], ["electronic", "/ˌel.ekˈtrɒn.ɪk/", "adj:전자의"],
-            ["element", "/ˈel.ɪ.mənt/", "n:요소"], ["elephant", "/ˈel.ɪ.fənt/", "n:코끼리"], ["elevator", "/ˈel.ɪ.veɪ.tər/", "n:엘리베이터"], ["eleven", "/ɪˈlev.ən/", "num:11, 열하나"], ["else", "/els/", "adv:그 밖의"],
-            ["elsewhere", "/ˌelsˈweər/", "adv:다른 곳에서"], ["email", "/ˈiː.meɪl/", "n:이메일"], ["embarrassed", "/ɪmˈbær.əst/", "adj:당황한"], ["embarrassing", "/ɪmˈbær.ə.sɪŋ/", "adj:당황스러운"], ["emerge", "/ɪˈmɜːdʒ/", "v:나타나다"],
-            ["emergency", "/ɪˈmɜː.dʒən.si/", "n:비상사태"], ["emotion", "/ɪˈməʊ.ʃən/", "n:감정"], ["emotional", "/ɪˈməʊ.ʃən.əl/", "adj:감정적인"], ["emphasis", "/ˈem.fə.sɪs/", "n:강조"], ["emphasize", "/ˈem.fə.saɪz/", "v:강조하다"],
-            ["employ", "/ɪmˈplɔɪ/", "v:고용하다"], ["employee", "/ɪmˈplɔɪ.iː/", "n:직원"], ["employer", "/ɪmˈplɔɪ.ər/", "n:고용주"], ["employment", "/ɪmˈplɔɪ.mənt/", "n:고용"], ["empty", "/ˈemp.ti/", "adj:비어있는"],
-            ["enable", "/ɪˈneɪ.bəl/", "v:가능하게 하다"], ["encounter", "/ɪnˈkaʊn.tər/", "v:마주치다", "n:만남"], ["encourage", "/ɪnˈkʌr.ɪdʒ/", "v:격려하다"], ["end", "/end/", "n:끝", "v:끝나다"], ["ending", "/ˈen.dɪŋ/", "n:결말"],
-            ["enemy", "/ˈen.ə.mi/", "n:적"], ["energy", "/ˈen.ə.dʒi/", "n:에너지"], ["engage", "/ɪnˈɡeɪdʒ/", "v:관여하다, 약혼하다"], ["engaged", "/ɪnˈɡeɪdʒd/", "adj:약혼한, 바쁜"], ["engine", "/ˈen.dʒɪn/", "n:엔진"],
-            ["engineer", "/ˌen.dʒɪˈnɪər/", "n:기술자"], ["engineering", "/ˌen.dʒɪˈnɪə.rɪŋ/", "n:공학"], ["enhance", "/ɪnˈhɑːns/", "v:향상시키다"], ["enjoy", "/ɪnˈdʒɔɪ/", "v:즐기다"], ["enjoyable", "/ɪnˈdʒɔɪ.ə.bəl/", "adj:즐거운"],
-            ["enormous", "/ɪˈnɔː.məs/", "adj:거대한"], ["enough", "/ɪˈnʌf/", "adj:충분한"], ["enquiry", "/ɪnˈkwaɪə.ri/", "n:문의"], ["ensure", "/ɪnˈʃɔːr/", "v:보장하다"], ["enter", "/ˈen.tər/", "v:들어가다"],
-            ["entertain", "/en.təˈteɪn/", "v:즐겁게 하다"], ["entertainment", "/en.təˈteɪn.mənt/", "n:오락"], ["enthusiasm", "/ɪnˈθjuː.zi.æz.əm/", "n:열정"], ["enthusiastic", "/ɪnˌθjuː.ziˈæs.tɪk/", "adj:열정적인"], ["entire", "/ɪnˈtaɪər/", "adj:전체의"],
-            ["entirely", "/ɪnˈtaɪə.li/", "adv:전적으로"], ["entrance", "/ˈen.trəns/", "n:입구"], ["entry", "/ˈen.tri/", "n:입장, 출품작"], ["envelope", "/ˈen.və.ləʊp/", "n:봉투"], ["environment", "/ɪnˈvaɪ.rən.mənt/", "n:환경"],
-            ["environmental", "/ɪnˌvaɪ.rənˈmen.təl/", "adj:환경의"], ["episode", "/ˈep.ɪ.səʊd/", "n:에피소드"], ["equal", "/ˈiː.kwəl/", "adj:동등한"], ["equally", "/ˈiː.kwə.li/", "adv:동등하게"], ["equipment", "/ɪˈkwɪp.mənt/", "n:장비"],
-            ["error", "/ˈer.ər/", "n:오류"], ["escape", "/ɪˈskeɪp/", "v:달아나다", "n:탈출"], ["especially", "/ɪˈspeʃ.əl.i/", "adv:특히"], ["essay", "/ˈes.eɪ/", "n:수필, 과제물"], ["essential", "/ɪˈsen.ʃəl/", "adj:필수적인"],
-            ["establish", "/ɪˈstæb.lɪʃ/", "v:설립하다"], ["estate", "/ɪˈsteɪt/", "n:사유지, 단지"], ["estimate", "/ˈes.tɪ.meɪt/", "v:추정하다", "n:견적"], ["ethical", "/ˈeθ.ɪ.kəl/", "adj:윤리적인"], ["euro", "/ˈjʊə.rəʊ/", "n:유로"],
-            ["evaluate", "/ɪˈvæl.ju.eɪt/", "v:평가하다"], ["even", "/ˈiː.vən/", "adv:심지어, 평평한"], ["evening", "/ˈiːv.nɪŋ/", "n:저녁"], ["event", "/ɪˈvent/", "n:사건, 행사"], ["eventually", "/ɪˈven.tʃu.ə.li/", "adv:결국"],
-            ["ever", "/ˈev.ər/", "adv:언제든, 한번이라도"], ["every", "/ˈev.ri/", "det:모든"], ["everybody", "/ˈev.ri.bɒd.i/", "pron:모든 사람"], ["everyday", "/ˈev.ri.deɪ/", "adj:매일의"], ["everyone", "/ˈev.ri.wʌn/", "pron:모든 사람"],
-            ["everything", "/ˈev.ri.θɪŋ/", "pron:모든 것"], ["everywhere", "/ˈev.ri.weər/", "adv:어디든지"], ["evidence", "/ˈev.ɪ.dəns/", "n:증거"], ["evil", "/ˈiː.vəl/", "adj:사악한", "n:악"], ["exact", "/ɪɡˈzækt/", "adj:정확한"],
-            ["exactly", "/ɪɡˈzækt.li/", "adv:정확히"], ["exam", "/ɪɡˈzæm/", "n:시험"], ["examination", "/ɪɡˌzæm.ɪˈneɪ.ʃən/", "n:시험, 검사"], ["examine", "/ɪɡˈzæm.ɪn/", "v:조사하다"], ["example", "/ɪɡˈzɑːm.pəl/", "n:예시"],
-            ["excellent", "/ˈek.səl.ənt/", "adj:훌륭한"], ["except", "/ɪkˈsept/", "prep:~을 제외하고"], ["exchange", "/ɪksˈtʃeɪndʒ/", "n:교환", "v:교환하다"], ["excited", "/ɪkˈsaɪ.tɪd/", "adj:신이 난"], ["excitement", "/ɪkˈsaɪt.mənt/", "n:흥분"],
-            ["exciting", "/ɪkˈsaɪ.tɪŋ/", "adj:신나는"], ["excuse", "/ɪkˈskjuːz/", "v:용서하다", "n:변명"], ["executive", "/ɪɡˈzek.jʊ.tɪv/", "n:임원, 경영진"], ["exercise", "/ˈek.sə.saɪz/", "n:운동", "v:운동하다"], ["exhibition", "/ˌek.sɪˈbɪʃ.ən/", "n:전시회"],
-            ["exist", "/ɪɡˈzɪst/", "v:존재하다"], ["existence", "/ɪɡˈzɪs.təns/", "n:존재"], ["exit", "/ˈek.sɪt/", "n:출구"], ["expand", "/ɪkˈspænd/", "v:확장하다"], ["expect", "/ɪkˈspekt/", "v:기대하다, 예상하다"],
-            ["expectation", "/ˌek.spekˈteɪ.ʃən/", "n:기대, 예상"], ["expected", "/ɪkˈspek.tɪd/", "adj:예상되는"], ["expense", "/ɪkˈspens/", "n:비용"], ["expensive", "/ɪkˈspen.sɪv/", "adj:비싼"], ["experience", "/ɪkˈspɪə.ri.əns/", "n:경험", "v:경험하다"],
-            ["experienced", "/ɪkˈspɪə.ri.ənst/", "adj:경험이 있는"], ["experiment", "/ɪkˈsper.ɪ.mənt/", "n:실험", "v:실험하다"], ["expert", "/ˈek.spɜːt/", "n:전문가"], ["explain", "/ɪkˈspleɪn/", "v:설명하다"], ["explanation", "/ˌek.spləˈneɪ.ʃən/", "n:설명"],
-            ["explode", "/ɪkˈspləʊd/", "v:폭발하다"], ["exploration", "/ˌek.spləˈreɪ.ʃən/", "n:탐험"], ["explore", "/ɪkˈsplɔːr/", "v:탐험하다"], ["explosion", "/ɪkˈspləʊ.ʒən/", "n:폭발"], ["export", "/ɪkˈspɔːt/", "v:수출하다", "n:수출"],
-            ["expose", "/ɪkˈspəʊz/", "v:노출시키다"], ["express", "/ɪkˈspres/", "v:표현하다", "adj:급행의"], ["expression", "/ɪkˈspreʃ.ən/", "n:표현, 표정"], ["extend", "/ɪkˈstend/", "v:확장하다, 연장하다"], ["extension", "/ɪkˈsten.ʃən/", "n:확장, 연장"],
-            ["extensive", "/ɪkˈsten.sɪv/", "adj:광범위한"], ["extent", "/ɪkˈstent/", "n:정도, 범위"], ["external", "/ɪkˈstɜː.nəl/", "adj:외부의"], ["extra", "/ˈek.strə/", "adj:추가의"], ["extraordinary", "/ɪkˈstrɔː.dɪn.ər.i/", "adj:비범한"],
-            ["extreme", "/ɪkˈstriːm/", "adj:극단적인"], ["extremely", "/ɪkˈstriːm.li/", "adv:극도로"], ["eye", "/aɪ/", "n:눈"], ["face", "/feɪs/", "n:얼굴", "v:직면하다"], ["facility", "/fəˈsɪl.ə.ti/", "n:시설"],
-            ["fact", "/fækt/", "n:사실"], ["factor", "/ˈfæk.tər/", "n:요인"], ["factory", "/ˈfæk.tər.i/", "n:공장"], ["fail", "/feɪl/", "v:실패하다"], ["failure", "/ˈfeɪ.ljər/", "n:실패"],
-            ["fair", "/feər/", "adj:공정한, 꽤 되는"], ["fairly", "/ˈfeə.li/", "adv:꽤, 공정하게"], ["faith", "/feɪθ/", "n:믿음, 신앙"], ["fall", "/fɔːl/", "v:떨어지다", "n:가을"], ["false", "/fɒls/", "adj:거짓의"],
-            ["familiar", "/fəˈmɪl.i.ər/", "adj:익숙한"], ["family", "/ˈfæm.əl.i/", "n:가족"], ["famous", "/ˈfeɪ.məs/", "adj:유명한"], ["fan", "/fæn/", "n:팬, 선풍기"], ["fancy", "/ˈfæn.si/", "adj:화려한", "v:원하다"],
-            ["fantastic", "/fænˈtæs.tɪk/", "adj:환상적인"], ["far", "/fɑːr/", "adj:먼", "adv:멀리"], ["farm", "/fɑːm/", "n:농장"], ["farmer", "/ˈfɑː.mər/", "n:농부"], ["farming", "/ˈfɑː.mɪŋ/", "n:농업"],
-            ["fascinating", "/ˈfæs.ɪ.neɪ.tɪŋ/", "adj:매혹적인"], ["fashion", "/ˈfæʃ.ən/", "n:패션"], ["fashionable", "/ˈfæʃ.ən.ə.bəl/", "adj:유행하는"], ["fast", "/fɑːst/", "adj:빠른", "adv:빨리"], ["fasten", "/ˈfɑː.sən/", "v:매다, 잠그다"],
-            ["fat", "/fæt/", "adj:뚱뚱한", "n:지방"], ["father", "/ˈfɑː.ðər/", "n:아버지"], ["fault", "/fɒlt/", "n:잘못, 결함"], ["favour", "/ˈfeɪ.vər/", "n:호의, 부탁"], ["favourite", "/ˈfeɪ.vər.ɪt/", "adj:가장 좋아하는"],
-            ["fear", "/fɪər/", "n:두려움", "v:두려워하다"], ["feather", "/ˈfeð.ər/", "n:깃털"], ["feature", "/ˈfiː.tʃər/", "n:특징", "v:특집으로 다루다"], ["february", "/ˈfeb.ru.ər.i/", "n:2월"], ["federal", "/ˈfed.ər.əl/", "adj:연방의"],
-            ["fee", "/fiː/", "n:수수료, 요금"], ["feed", "/fiːd/", "v:먹이를 주다"], ["feel", "/fiːl/", "v:느끼다"], ["feeling", "/ˈfiː.lɪŋ/", "n:느낌, 감정"], ["fellow", "/ˈfel.əʊ/", "n:동료, 녀석"],
-            ["female", "/ˈfiː.meɪl/", "adj:여성의", "n:여성"], ["fence", "/fens/", "n:울타리"], ["festival", "/ˈfes.tɪ.vəl/", "n:축제"], ["fever", "/ˈfiː.vər/", "n:열"], ["few", "/fjuː/", "adj:소수의"],
-            ["field", "/fiːld/", "n:들판, 분야"], ["fight", "/faɪt/", "v:싸우다", "n:싸움"], ["figure", "/ˈfɪɡ.ər/", "n:수치, 인물", "v:생각하다"], ["file", "/faɪl/", "n:파일", "v:보관하다"], ["fill", "/fɪl/", "v:채우다"],
-            ["film", "/fɪlm/", "n:영화"], ["final", "/ˈfaɪ.nəl/", "adj:마지막의"], ["finally", "/ˈfaɪ.nəl.i/", "adv:마침내"], ["finance", "/ˈfaɪ.næns/", "n:재정, 자금"], ["financial", "/faɪˈnæn.ʃəl/", "adj:재정의"],
-            ["find", "/faɪnd/", "v:찾다, 발견하다"], ["finding", "/ˈfaɪn.dɪŋ/", "n:발견물, 결과"], ["fine", "/faɪn/", "adj:좋은, 미세한", "n:벌금"], ["finger", "/ˈfɪŋ.ɡər/", "n:손가락"], ["finish", "/ˈfɪn.ɪʃ/", "v:끝내다"],
-            ["fire", "/faɪər/", "n:불", "v:해고하다"], ["firm", "/fɜːm/", "n:회사", "adj:단단한"], ["first", "/fɜːst/", "adj:첫 번째의", "adv:먼저"], ["fish", "/fɪʃ/", "n:물고기", "v:낚시하다"], ["fishing", "/ˈfɪʃ.ɪŋ/", "n:낚시"],
-            ["fit", "/fɪt/", "v:맞다", "adj:건강한"], ["fitness", "/ˈfɪt.nəs/", "n:건강, 적합함"], ["five", "/faɪv/", "num:5, 다섯"], ["fix", "/fɪks/", "v:고치다, 고정시키다"], ["flag", "/flæɡ/", "n:깃발"],
-            ["flame", "/fleɪm/", "n:불꽃"], ["flash", "/flæʃ/", "v:번쩍이다", "n:섬광"], ["flat", "/flæt/", "adj:평평한", "n:아파트 (영국)"], ["flexible", "/ˈflek.sə.bəl/", "adj:유연한"], ["flight", "/flaɪt/", "n:비행, 항공편"],
-            ["float", "/fləʊt/", "v:뜨다"], ["flood", "/flʌd/", "n:홍수", "v:범람하다"], ["floor", "/flɔːr/", "n:바닥, 층"], ["flour", "/flaʊər/", "n:밀가루"], ["flow", "/fləʊ/", "v:흐르다", "n:흐름"],
-            ["flower", "/ˈflaʊ.ər/", "n:꽃"], ["flu", "/fluː/", "n:독감"], ["fly", "/flaɪ/", "v:날다", "n:파리"], ["flying", "/ˈflaɪ.ɪŋ/", "adj:나는, 비행의"], ["focus", "/ˈfəʊ.kəs/", "v:집중하다", "n:초점"],
-            ["fold", "/fəʊld/", "v:접다"], ["folding", "/ˈfəʊl.dɪŋ/", "adj:접이식의"], ["folk", "/fəʊk/", "n:사람들, 민속"], ["follow", "/ˈfɒl.əʊ/", "v:따라가다"], ["following", "/ˈfɒl.əʊ.ɪŋ/", "adj:다음의"],
-            ["food", "/fuːd/", "n:음식"], ["foot", "/fʊt/", "n:발"], ["football", "/ˈfʊt.bɔːl/", "n:축구"], ["for", "/fɔːr/", "prep:~을 위하여"], ["force", "/fɔːs/", "n:힘", "v:강요하다"],
-            ["foreign", "/ˈfɒr.ən/", "adj:외국의"], ["forest", "/ˈfɒr.ɪst/", "n:숲"], ["forever", "/fəˈre.vər/", "adv:영원히"], ["forget", "/fəˈɡet/", "v:잊다"], ["forgive", "/fəˈɡɪv/", "v:용서하다"],
-            ["fork", "/fɔːk/", "n:포크"], ["form", "/fɔːm/", "n:형태, 서식", "v:형성하다"], ["formal", "/ˈfɔː.məl/", "adj:격식 있는"], ["former", "/ˈfɔː.mər/", "adj:이전의"], ["fortunately", "/ˈfɔː.tʃən.ət.li/", "adv:다행히도"],
-            ["fortune", "/ˈfɔː.tʃuːn/", "n:운, 재산"], ["forty", "/ˈfɔː.ti/", "num:40, 마흔"], ["forward", "/ˈfɔː.wəd/", "adv:앞으로"], ["found", "/faʊnd/", "v:설립하다"], ["four", "/fɔːr/", "num:4, 넷"],
-            ["fourteen", "/ˌfɔːˈtiːn/", "num:14, 열넷"], ["frame", "/freɪm/", "n:틀, 액자"], ["free", "/friː/", "adj:자유로운, 무료의"], ["freedom", "/ˈfriː.dəm/", "n:자유"], ["freeze", "/friːz/", "v:얼다"],
-            ["frequency", "/ˈfriː.kwən.si/", "n:빈도"], ["frequent", "/ˈfriː.kwənt/", "adj:빈번한"], ["frequently", "/ˈfriː.kwənt.li/", "adv:자주"], ["fresh", "/freʃ/", "adj:신선한"], ["friday", "/ˈfraɪ.deɪ/", "n:금요일"],
-            ["fridge", "/frɪdʒ/", "n:냉장고"], ["friend", "/frend/", "n:친구"], ["friendly", "/ˈfrend.li/", "adj:친절한"], ["friendship", "/ˈfrend.ʃɪp/", "n:우정"], ["frighten", "/ˈfraɪ.tən/", "v:겁먹게 하다"],
-            ["frightened", "/ˈfraɪ.tənd/", "adj:겁먹은"], ["frightening", "/ˈfraɪ.tən.ɪŋ/", "adj:무서운"], ["frog", "/frɒɡ/", "n:개구리"], ["from", "/frɒm/", "prep:~로부터"], ["front", "/frʌnt/", "n:앞"],
-            ["frozen", "/ˈfrəʊ.zən/", "adj:냉동된"], ["fruit", "/fruːt/", "n:과일"], ["fry", "/fraɪ/", "v:튀기다, 굽다"], ["fuel", "/fjʊəl/", "n:연료"], ["full", "/fʊl/", "adj:가득 찬"],
-            ["fully", "/ˈfʊl.i/", "adv:완전히"], ["fun", "/fʌn/", "n:재미", "adj:재미있는"], ["function", "/ˈfʌŋk.ʃən/", "n:기능", "v:작동하다"], ["fund", "/fʌnd/", "n:자금", "v:자금을 대다"], ["fundamental", "/ˌfʌn.dəˈmen.təl/", "adj:근본적인"],
-            ["funding", "/ˈfʌn.dɪŋ/", "n:자금 지원"], ["funeral", "/ˈfjuː.nər.əl/", "n:장례식"], ["funny", "/ˈfʌn.i/", "adj:웃기는, 이상한"], ["fur", "/fɜːr/", "n:털, 모피"], ["furniture", "/ˈfɜː.nɪ.tʃər/", "n:가구"],
-            ["further", "/ˈfɜː.ðər/", "adj:더 먼, 추가의"], ["future", "/ˈfjuː.tʃər/", "n:미래"], ["gain", "/ɡeɪn/", "v:얻다", "n:이익"], ["gallery", "/ˈɡæl.ər.i/", "n:미술관"], ["game", "/ɡeɪm/", "n:게임, 경기"],
-            ["gang", "/ɡæŋ/", "n:갱, 패거리"], ["gap", "/ɡæp/", "n:격차, 틈"], ["garage", "/ˈɡær.ɑːʒ/", "n:차고"], ["garden", "/ˈɡɑː.dən/", "n:정원"], ["gas", "/ɡæs/", "n:기체, 가스"],
-            ["gate", "/ɡeɪt/", "n:문, 게이트"], ["gather", "/ˈɡæð.ər/", "v:모으다"], ["general", "/ˈdʒen.ər.əl/", "adj:일반적인"], ["generally", "/ˈdʒen.ər.əl.i/", "adv:일반적으로"], ["generate", "/ˈdʒen.ə.reɪt/", "v:발생시키다"],
-            ["generation", "/ˌdʒen.əˈreɪ.ʃən/", "n:세대"], ["generous", "/ˈdʒen.ər.əs/", "adj:관대한"], ["genre", "/ˈʒɒn.rə/", "n:장르"], ["gentle", "/ˈdʒen.təl/", "adj:온화한"], ["gentleman", "/ˈdʒen.təl.mən/", "n:신사"],
-            ["geography", "/dʒiˈɒɡ.rə.fi/", "n:지리학"], ["get", "/ɡet/", "v:얻다, 되다, 도착하다"], ["ghost", "/ɡəʊst/", "n:유령"], ["giant", "/ˈdʒaɪ.ənt/", "adj:거대한", "n:거인"], ["gift", "/ɡɪft/", "n:선물, 재능"],
-            ["girl", "/ɡɜːl/", "n:소녀"], ["girlfriend", "/ˈɡɜːl.frend/", "n:여자친구"], ["give", "/ɡɪv/", "v:주다"], ["glad", "/ɡlæd/", "adj:기쁜"], ["glass", "/ɡlɑːs/", "n:유리, 잔"],
-            ["glasses", "/ˈɡlɑː.sɪz/", "n:안경"], ["global", "/ˈɡləʊ.bəl/", "adj:세계적인"], ["glove", "/ɡlʌv/", "n:장갑"], ["go", "/ɡəʊ/", "v:가다"], ["goal", "/ɡəʊl/", "n:목표, 골"],
-            ["god", "/ɡɒd/", "n:신"], ["gold", "/ɡəʊld/", "n:금", "adj:금색의"], ["golf", "/ɡɒlf/", "n:골프"], ["good", "/ɡʊd/", "adj:좋은"], ["goodbye", "/ɡʊdˈbaɪ/", "int:안녕"],
-            ["goods", "/ɡʊdz/", "n:상품"], ["govern", "/ˈɡʌv.ən/", "v:통치하다"], ["government", "/ˈɡʌv.ən.mənt/", "n:정부"], ["grab", "/ɡræb/", "v:잡다"], ["grade", "/ɡreɪd/", "n:등급, 성적"],
-            ["gradually", "/ˈɡræd.ʒu.ə.li/", "adv:점차적으로"], ["graduate", "/ˈɡræd.ʒu.eɪt/", "v:졸업하다"], ["grain", "/ɡreɪn/", "n:곡물"], ["grand", "/ɡrænd/", "adj:웅장한"], ["grandfather", "/ˈɡræn.fɑː.ðər/", "n:할아버지"],
-            ["grandmother", "/ˈɡræn.mʌð.ər/", "n:할머니"], ["grandparent", "/ˈɡræn.peə.rənt/", "n:조부모"], ["grant", "/ɡrɑːnt/", "v:승인하다", "n:보조금"], ["grass", "/ɡrɑːs/", "n:잔디, 풀"], ["grateful", "/ˈɡreɪt.fəl/", "adj:감사하는"],
-            ["great", "/ɡreɪt/", "adj:위대한, 아주 좋은"], ["green", "/ɡriːn/", "adj:녹색의"], ["greet", "/ɡriːt/", "v:인사하다"], ["grey", "/ɡreɪ/", "adj:회색의"], ["ground", "/ɡraʊnd/", "n:땅, 근거"],
-            ["group", "/ɡruːp/", "n:그룹, 집단"], ["grow", "/ɡrəʊ/", "v:자라다, 재배하다"], ["growth", "/ɡrəʊθ/", "n:성장"], ["guarantee", "/ˌɡær.ənˈtiː/", "v:보장하다", "n:보증"], ["guard", "/ɡɑːd/", "n:경비", "v:지키다"],
-            ["guess", "/ɡes/", "v:추측하다", "n:추측"], ["guest", "/ɡest/", "n:손님"], ["guide", "/ɡaɪd/", "n:안내자", "v:안내하다"], ["guilty", "/ˈɡɪl.ti/", "adj:유죄의, 죄책감 드는"], ["guitar", "/ɡɪˈtɑːr/", "n:기타"],
-            ["gun", "/ɡʌn/", "n:총"], ["guy", "/ɡaɪ/", "n:남자, 녀석"], ["gym", "/dʒɪm/", "n:체육관"], ["habit", "/ˈhæb.ɪt/", "n:습관"], ["hair", "/heər/", "n:머리카락"],
-            ["half", "/hɑːf/", "n:절반"], ["hall", "/hɔːl/", "n:홀, 복도"], ["hand", "/hænd/", "n:손", "v:건네주다"], ["handle", "/ˈhæn.dəl/", "v:다루다", "n:손잡이"], ["hang", "/hæŋ/", "v:걸다, 매달다"],
-            ["happen", "/ˈhæp.ən/", "v:일어난다"], ["happily", "/ˈhæp.əl.i/", "adv:행복하게"], ["happiness", "/ˈhæp.i.nəs/", "n:행복"], ["happy", "/ˈhæp.i/", "adj:행복한"], ["hard", "/hɑːd/", "adj:어려운, 단단한", "adv:열심히"],
-            ["hardly", "/ˈhɑːd.li/", "adv:거의 ~않다"], ["harm", "/hɑːm/", "n:해", "v:해치다"], ["harmful", "/ˈhɑːm.fəl/", "adj:해로운"], ["hat", "/hæt/", "n:모자"], ["hate", "/heɪt/", "v:미워하다"],
-            ["have", "/hæv/", "v:가지다"], ["have to", "/ˈhæv tuː/", "v:~해야 한다"], ["he", "/hiː/", "pron:그는"], ["head", "/hed/", "n:머리, 우두머리"], ["headache", "/ˈhed.eɪk/", "n:두통"],
+            ["disappointment", "/ˌdɪs.əˈpɔɪnt.mənt/", "n:실망"], ["disaster", "/dɪˈzɑː.stər/", "n:재앙"], ["disc", "/dɪsk/", "n:디스크"], ["discipline", "/ˈdɪs.ə.plɪn/", "n:규율"], ["discount", "/ˈdɪs.kaʊnt/", "n:할인"],
+            ["discover", "/dɪˈskʌv.ər/", "v:발견하다"], ["discovery", "/dɪˈskʌv.ər.i/", "n:발견"], ["discuss", "/dɪˈskʌs/", "v:논의하다"], ["discussion", "/dɪˈskʌʃ.ən/", "n:토론"], ["disease", "/dɪˈziːz/", "n:질병"],
+            ["dish", "/dɪʃ/", "n:접시"], ["dishonest", "/dɪˈsɒn.ɪst/", "adj:정직하지 못한"], ["disk", "/dɪsk/", "n:디스크"], ["dislike", "/dɪsˈlaɪk/", "v:싫어하다"], ["dismiss", "/dɪˈsmɪs/", "v:묵살하다"],
+            ["display", "/dɪˈspleɪ/", "v:전시하다"], ["distance", "/ˈdɪs.təns/", "n:거리"], ["distant", "/ˈdɪs.tənt/", "adj:먼"], ["distinct", "/dɪˈstɪŋkt/", "adj:뚜렷한"], ["distinguish", "/dɪˈstɪŋ.ɡwɪʃ/", "v:구별하다"],
+            ["distribute", "/dɪˈstrɪb.juːt/", "v:분배하다"], ["distribution", "/ˌdɪs.trɪˈbjuː.ʃən/", "n:분배"], ["district", "/ˈdɪs.trɪkt/", "n:구역"], ["disturb", "/dɪˈstɜːb/", "v:방해하다"], ["divide", "/dɪˈvaɪd/", "v:나누다"],
+            ["division", "/dɪˈvɪʒ.ən/", "n:분할"], ["divorce", "/dɪˈvɔːs/", "n:이혼"], ["do", "/duː/", "v:하다"], ["doctor", "/ˈdɒk.tər/", "n:의사"], ["document", "/ˈdɒk.jə.mənt/", "n:문서"],
+            ["dog", "/dɒɡ/", "n:개"], ["dollar", "/ˈdɒl.ər/", "n:달러"], ["domestic", "/dəˈmes.tɪk/", "adj:국내의"], ["dominate", "/ˈdɒm.ɪ.neɪt/", "v:지배하다"], ["door", "/dɔːr/", "n:문"],
+            ["dot", "/dɒt/", "n:점"], ["double", "/ˈdʌb.əl/", "adj:두 배의"], ["doubt", "/daʊt/", "n:의심"], ["down", "/daʊn/", "adv:아래로"], ["downstairs", "/ˌdaʊnˈsteəz/", "adv:아래층으로"],
+            ["downtown", "/ˌdaʊnˈtaʊn/", "adv:시내에"], ["dozen", "/ˈdʌz.ən/", "n:다스"], ["draft", "/drɑːft/", "n:초안"], ["drag", "/dræɡ/", "v:끌다"], ["drama", "/ˈdrɑː.mə/", "n:드라마"],
+            ["dramatic", "/drəˈmæt.ɪk/", "adj:극적인"], ["dramatically", "/drəˈmæt.ɪ.kəl.i/", "adv:극적으로"], ["draw", "/drɔː/", "v:그리다"], ["drawing", "/ˈdrɔː.ɪŋ/", "n:그림"], ["dream", "/driːm/", "n:꿈"],
+            ["dress", "/dres/", "n:드레스"], ["dressed", "/drest/", "adj:옷을 입은"], ["drink", "/drɪŋk/", "v:마시다"], ["drive", "/draɪv/", "v:운전하다"], ["driver", "/ˈdraɪ.vər/", "n:운전사"],
+            ["driving", "/ˈdraɪ.vɪŋ/", "n:운전"], ["drop", "/drɒp/", "v:떨어지다"], ["drug", "/drʌɡ/", "n:약"], ["drum", "/drʌm/", "n:드럼"], ["drunk", "/drʌŋk/", "adj:술 취한"],
+            ["dry", "/draɪ/", "adj:마른"], ["duck", "/dʌk/", "n:오리"], ["due", "/djuː/", "adj:예정된"], ["dull", "/dʌl/", "adj:지루한"], ["dump", "/dʌmp/", "v:버리다"],
+            ["during", "/ˈdʒʊə.rɪŋ/", "prep:동안"], ["dust", "/dʌst/", "n:먼지"], ["duty", "/ˈdʒuː.ti/", "n:의무"], ["DVD", "/ˌdiː.viːˈdiː/", "n:DVD"], ["each", "/iːtʃ/", "det:각각의"],
+            ["ear", "/ɪər/", "n:귀"], ["early", "/ˈɜː.li/", "adj:일찍"], ["earn", "/ɜːn/", "v:벌다"], ["earth", "/ɜːθ/", "n:지구"], ["ease", "/iːz/", "n:쉬움"],
+            ["easily", "/ˈiː.zəl.i/", "adv:쉽게"], ["east", "/iːst/", "n:동쪽"], ["eastern", "/ˈiː.stən/", "adj:동쪽의"], ["easy", "/ˈiː.zi/", "adj:쉬운"], ["eat", "/iːt/", "v:먹다"],
+            ["economic", "/iː.kəˈnɒm.ɪk/", "adj:경제의"], ["economy", "/iˈkɒn.ə.mi/", "n:경제"], ["edge", "/edʒ/", "n:가장자리"], ["edit", "/ˈed.ɪt/", "v:편집하다"], ["edition", "/ɪˈdɪʃ.ən/", "n:판"],
+            ["editor", "/ˈed.ɪ.tər/", "n:편집자"], ["educate", "/ˈed.jʊ.keɪt/", "v:교육하다"], ["educated", "/ˈed.jʊ.keɪ.tɪd/", "adj:교육받은"], ["education", "/ˌed.jʊˈkeɪ.ʃən/", "n:교육"], ["educational", "/ˌed.jʊˈkeɪ.ʃən.əl/", "adj:교육적인"],
+            ["effect", "/ɪˈfekt/", "n:효과"], ["effective", "/ɪˈfek.tɪv/", "adj:효과적인"], ["effectively", "/ɪˈfek.tɪv.li/", "adv:효과적으로"], ["efficient", "/ɪˈfɪʃ.ənt/", "adj:효율적인"], ["effort", "/ˈef.ət/", "n:노력"],
+            ["egg", "/eɡ/", "n:달걀"], ["eight", "/eɪt/", "num:8"], ["eighteen", "/ˌeɪˈtiːn/", "num:18"], ["eighty", "/ˈeɪ.ti/", "num:80"], ["either", "/ˈaɪ.ðər/", "det:어느 하나"],
+            ["elderly", "/ˈel.dəl.i/", "adj:연로한"], ["elect", "/iˈlekt/", "v:선출하다"], ["election", "/iˈlek.ʃən/", "n:선거"], ["electric", "/iˈlek.trɪk/", "adj:전기의"], ["electrical", "/iˈlek.trɪ.kəl/", "adj:전기의"],
+            ["electricity", "/ɪˌlekˈtrɪs.ə.ti/", "n:전기"], ["electronic", "/ˌel.ekˈtrɒn.ɪk/", "adj:전자의"], ["element", "/ˈel.ɪ.mənt/", "n:요소"], ["elephant", "/ˈel.ɪ.fənt/", "n:코끼리"], ["elevator", "/ˈel.ɪ.veɪ.tər/", "n:엘리베이터"],
+            ["eleven", "/ɪˈlev.ən/", "num:11"], ["else", "/els/", "adv:그 밖의"], ["elsewhere", "/ˌelsˈweər/", "adv:다른 곳에서"], ["email", "/ˈiː.meɪl/", "n:이메일"], ["embarrassed", "/ɪmˈbær.əst/", "adj:당황한"],
+            ["embarrassing", "/ɪmˈbær.ə.sɪŋ/", "adj:당황스러운"], ["emerge", "/ɪˈmɜːdʒ/", "v:나타나다"], ["emergency", "/ɪˈmɜː.dʒən.si/", "n:비상사태"], ["emotion", "/ɪˈməʊ.ʃən/", "n:감정"], ["emotional", "/ɪˈməʊ.ʃən.əl/", "adj:감정적인"],
+            ["emphasis", "/ˈem.fə.sɪs/", "n:강조"], ["emphasize", "/ˈem.fə.saɪz/", "v:강조하다"], ["empire", "/ˈem.paɪər/", "n:제국"], ["employ", "/ɪmˈplɔɪ/", "v:고용하다"], ["employee", "/ɪmˈplɔɪ.iː/", "n:직원"],
+            ["employer", "/ɪmˈplɔɪ.ər/", "n:고용주"], ["employment", "/ɪmˈplɔɪ.mənt/", "n:고용"], ["empty", "/ˈemp.ti/", "adj:빈"], ["enable", "/ɪˈneɪ.bəl/", "v:가능하게 하다"], ["encounter", "/ɪnˈkaʊn.tər/", "v:마주치다"],
+            ["encourage", "/ɪnˈkʌr.ɪdʒ/", "v:격려하다"], ["encouraging", "/ɪnˈkʌr.ɪ.dʒɪŋ/", "adj:격려가 되는"], ["end", "/end/", "n:끝"], ["ending", "/ˈen.dɪŋ/", "n:결말"], ["enemy", "/ˈen.ə.mi/", "n:적"],
+            ["energy", "/ˈen.ə.dʒi/", "n:에너지"], ["engage", "/ɪnˈɡeɪdʒ/", "v:참여하다"], ["engaged", "/ɪnˈɡeɪdʒd/", "adj:약혼한"], ["engine", "/ˈen.dʒɪn/", "n:엔진"], ["engineer", "/ˌen.dʒɪˈnɪər/", "n:엔지니어"],
+            ["engineering", "/ˌen.dʒɪˈnɪə.rɪŋ/", "n:공학"], ["enhance", "/ɪnˈhɑːns/", "v:향상시키다"], ["enjoy", "/ɪnˈdʒɔɪ/", "v:즐기다"], ["enjoyable", "/ɪnˈdʒɔɪ.ə.bəl/", "adj:즐거운"], ["enormous", "/ɪˈnɔː.məs/", "adj:거대한"],
+            ["enough", "/ɪˈnʌf/", "adj:충분한"], ["enquiry", "/ɪnˈkwaɪə.ri/", "n:문의"], ["ensure", "/ɪnˈʃɔːr/", "v:보장하다"], ["enter", "/ˈen.tər/", "v:들어가다"], ["entertain", "/en.təˈteɪn/", "v:즐겁게 하다"],
+            ["entertaining", "/en.təˈteɪ.nɪŋ/", "adj:재미있는"], ["entertainment", "/en.təˈteɪn.mənt/", "n:오락"], ["enthusiasm", "/ɪnˈθjuː.zi.æz.əm/", "n:열정"], ["enthusiastic", "/ɪnˌθjuː.ziˈæs.tɪk/", "adj:열정적인"], ["entire", "/ɪnˈtaɪər/", "adj:전체의"],
+            ["entirely", "/ɪnˈtaɪə.li/", "adv:전적으로"], ["entrance", "/ˈen.trəns/", "n:입구"], ["entry", "/ˈen.tri/", "n:입장"], ["envelope", "/ˈen.və.ləʊp/", "n:봉투"], ["environment", "/ɪnˈvaɪ.rən.mənt/", "n:환경"],
+            ["environmental", "/ɪnˌvaɪ.rənˈmen.təl/", "adj:환경의"], ["episode", "/ˈep.ɪ.səʊd/", "n:에피소드"], ["equal", "/ˈiː.kwəl/", "adj:평등한"], ["equally", "/ˈiː.kwə.li/", "adv:평등하게"], ["equipment", "/ɪˈkwɪp.mənt/", "n:장비"],
+            ["error", "/ˈer.ər/", "n:오류"], ["escape", "/ɪˈskeɪp/", "v:탈출하다"], ["especially", "/ɪˈspeʃ.əl.i/", "adv:특히"], ["essay", "/ˈes.eɪ/", "n:수필"], ["essential", "/ɪˈsen.ʃəl/", "adj:필수적인"],
+            ["establish", "/ɪˈstæb.lɪʃ/", "v:설립하다"], ["estate", "/ɪˈsteɪt/", "n:사유지"], ["estimate", "/ˈes.tɪ.meɪt/", "v:추정하다"], ["ethical", "/ˈeθ.ɪ.kəl/", "adj:윤리적인"], ["euro", "/ˈjʊə.rəʊ/", "n:유로"],
+            ["evaluate", "/ɪˈvæl.ju.eɪt/", "v:평가하다"], ["even", "/ˈiː.vən/", "adv:심지어"], ["evening", "/ˈiːv.nɪŋ/", "n:저녁"], ["event", "/ɪˈvent/", "n:사건"], ["eventually", "/ɪˈven.tʃu.ə.li/", "adv:결국"],
+            ["ever", "/ˈev.ər/", "adv:언제든"], ["every", "/ˈev.ri/", "det:모든"], ["everybody", "/ˈev.ri.bɒd.i/", "pron:모든 사람"], ["everyday", "/ˈev.ri.deɪ/", "adj:매일의"], ["everyone", "/ˈev.ri.wʌn/", "pron:모든 사람"],
+            ["everything", "/ˈev.ri.θɪŋ/", "pron:모든 것"], ["everywhere", "/ˈev.ri.weər/", "adv:어디든지"], ["evidence", "/ˈev.ɪ.dəns/", "n:증거"], ["evil", "/ˈiː.vəl/", "adj:사악한"], ["exact", "/ɪɡˈzækt/", "adj:정확한"],
+            ["exactly", "/ɪɡˈzækt.li/", "adv:정확히"], ["exam", "/ɪɡˈzæm/", "n:시험"], ["examination", "/ɪɡˌzæm.ɪˈneɪ.ʃən/", "n:시험"], ["examine", "/ɪɡˈzæm.ɪn/", "v:검사하다"], ["example", "/ɪɡˈzɑːm.pəl/", "n:예시"],
+            ["excellent", "/ˈek.səl.ənt/", "adj:훌륭한"], ["except", "/ɪkˈsept/", "prep:제외하고"], ["exchange", "/ɪksˈtʃeɪndʒ/", "n:교환"], ["excite", "/ɪkˈsaɪt/", "v:흥분시키다"], ["excited", "/ɪkˈsaɪ.tɪd/", "adj:흥분한"],
+            ["excitement", "/ɪkˈsaɪt.mənt/", "n:흥분"], ["exciting", "/ɪkˈsaɪ.tɪŋ/", "adj:흥미진진한"], ["excuse", "/ɪkˈskjuːz/", "n:변명"], ["executive", "/ɪɡˈzek.jʊ.tɪv/", "n:임원"], ["exercise", "/ˈek.sə.saɪz/", "n:운동"],
+            ["exhibition", "/ˌek.sɪˈbɪʃ.ən/", "n:전시회"], ["exist", "/ɪɡˈzɪst/", "v:존재하다"], ["existence", "/ɪɡˈzɪs.təns/", "n:존재"], ["exit", "/ˈek.sɪt/", "n:출구"], ["expand", "/ɪkˈspænd/", "v:확장하다"],
+            ["expect", "/ɪkˈspekt/", "v:기대하다"], ["expectation", "/ˌek.spekˈteɪ.ʃən/", "n:기대"], ["expected", "/ɪkˈspek.tɪd/", "adj:예상되는"], ["expense", "/ɪkˈspens/", "n:비용"], ["expensive", "/ɪkˈspen.sɪv/", "adj:비싼"],
+            ["experience", "/ɪkˈspɪə.ri.əns/", "n:경험"], ["experienced", "/ɪkˈspɪə.ri.ənst/", "adj:경험이 있는"], ["experiment", "/ɪkˈsper.ɪ.mənt/", "n:실험"], ["expert", "/ˈek.spɜːt/", "n:전문가"], ["explain", "/ɪkˈspleɪn/", "v:설명하다"],
+            ["explanation", "/ˌek.spləˈneɪ.ʃən/", "n:설명"], ["explode", "/ɪkˈspləʊd/", "v:폭발하다"], ["exploration", "/ˌek.spləˈreɪ.ʃən/", "n:탐험"], ["explore", "/ɪkˈsplɔːr/", "v:탐험하다"], ["explosion", "/ɪkˈspləʊ.ʒən/", "n:폭발"],
+            ["export", "/ɪkˈspɔːt/", "n:수출"], ["expose", "/ɪkˈspəʊz/", "v:노출시키다"], ["express", "/ɪkˈspres/", "v:표현하다"], ["expression", "/ɪkˈspreʃ.ən/", "n:표현"], ["extend", "/ɪkˈstend/", "v:연장하다"],
+            ["extension", "/ɪkˈsten.ʃən/", "n:연장"], ["extensive", "/ɪkˈsten.sɪv/", "adj:광범위한"], ["extent", "/ɪkˈstent/", "n:정도"], ["external", "/ɪkˈstɜː.nəl/", "adj:외부의"], ["extra", "/ˈek.strə/", "adj:추가의"],
+            ["extraordinary", "/ɪkˈstrɔː.dɪn.ər.i/", "adj:비범한"], ["extreme", "/ɪkˈstriːm/", "adj:극단적인"], ["extremely", "/ɪkˈstriːm.li/", "adv:극도로"], ["eye", "/aɪ/", "n:눈"], ["face", "/feɪs/", "n:얼굴"],
+            ["facility", "/fəˈsɪl.ə.ti/", "n:시설"], ["fact", "/fækt/", "n:사실"], ["factor", "/ˈfæk.tər/", "n:요인"], ["factory", "/ˈfæk.tər.i/", "n:공장"], ["fail", "/feɪl/", "v:실패하다"],
+            ["failure", "/ˈfeɪ.ljər/", "n:실패"], ["fair", "/feər/", "adj:공정한"], ["fairly", "/ˈfeə.li/", "adv:꽤"], ["faith", "/feɪθ/", "n:믿음"], ["fall", "/fɔːl/", "v:떨어지다"],
+            ["false", "/fɒls/", "adj:거짓의"], ["familiar", "/fəˈmɪl.i.ər/", "adj:익숙한"], ["family", "/ˈfæm.əl.i/", "n:가족"], ["famous", "/ˈfeɪ.məs/", "adj:유명한"], ["fan", "/fæn/", "n:팬"],
+            ["fancy", "/ˈfæn.si/", "adj:화려한"], ["fantastic", "/fænˈtæs.tɪk/", "adj:환상적인"], ["far", "/fɑːr/", "adj:먼"], ["farm", "/fɑːm/", "n:농장"], ["farmer", "/ˈfɑː.mər/", "n:농부"],
+            ["farming", "/ˈfɑː.mɪŋ/", "n:농업"], ["fashion", "/ˈfæʃ.ən/", "n:패션"], ["fashionable", "/ˈfæʃ.ən.ə.bəl/", "adj:유행하는"], ["fast", "/fɑːst/", "adj:빠른"], ["fasten", "/ˈfɑː.sən/", "v:매다"],
+            ["fat", "/fæt/", "adj:뚱뚱한"], ["father", "/ˈfɑː.ðər/", "n:아버지"], ["fault", "/fɒlt/", "n:잘못"], ["favour", "/ˈfeɪ.vər/", "n:호의"], ["favourite", "/ˈfeɪ.vər.ɪt/", "adj:가장 좋아하는"],
+            ["fear", "/fɪər/", "n:두려움"], ["feather", "/ˈfeð.ər/", "n:깃털"], ["feature", "/ˈfiː.tʃər/", "n:특징"], ["february", "/ˈfeb.ru.ər.i/", "n:2월"], ["federal", "/ˈfed.ər.əl/", "adj:연방의"],
+            ["fee", "/fiː/", "n:수수료"], ["feed", "/fiːd/", "v:먹이다"], ["feel", "/fiːl/", "v:느끼다"], ["feeling", "/ˈfiː.lɪŋ/", "n:느낌"], ["fellow", "/ˈfel.əʊ/", "n:동료"],
+            ["female", "/ˈfiː.meɪl/", "adj:여성의"], ["fence", "/fens/", "n:울타리"], ["festival", "/ˈfes.tɪ.vəl/", "n:축제"], ["fever", "/ˈfiː.vər/", "n:열"], ["few", "/fjuː/", "adj:소수의"],
+            ["field", "/fiːld/", "n:들판"], ["fight", "/faɪt/", "v:싸우다"], ["fighting", "/ˈfaɪ.tɪŋ/", "n:싸움"], ["figure", "/ˈfɪɡ.ər/", "n:수치"], ["file", "/faɪl/", "n:파일"],
+            ["fill", "/fɪl/", "v:채우다"], ["film", "/fɪlm/", "n:영화"], ["final", "/ˈfaɪ.nəl/", "adj:마지막의"], ["finally", "/ˈfaɪ.nəl.i/", "adv:마침내"], ["finance", "/ˈfaɪ.næns/", "n:재정"],
+            ["financial", "/faɪˈnæn.ʃəl/", "adj:재정의"], ["find", "/faɪnd/", "v:찾다"], ["finding", "/ˈfaɪn.dɪŋ/", "n:발견"], ["fine", "/faɪn/", "adj:좋은"], ["finger", "/ˈfɪŋ.ɡər/", "n:손가락"],
+            ["finish", "/ˈfɪn.ɪʃ/", "v:끝내다"], ["fire", "/faɪər/", "n:불"], ["firm", "/fɜːm/", "n:회사"], ["first", "/fɜːst/", "adj:첫 번째의"], ["fish", "/fɪʃ/", "n:물고기"],
+            ["fishing", "/ˈfɪʃ.ɪŋ/", "n:낚시"], ["fit", "/fɪt/", "adj:적합한"], ["fitness", "/ˈfɪt.nəs/", "n:건강"], ["five", "/faɪv/", "num:5"], ["fix", "/fɪks/", "v:고치다"],
+            ["fixed", "/fɪkst/", "adj:고정된"], ["flag", "/flæɡ/", "n:깃발"], ["flame", "/fleɪm/", "n:불꽃"], ["flash", "/flæʃ/", "n:섬광"], ["flat", "/flæt/", "adj:평평한"],
+            ["flavour", "/ˈfleɪ.vər/", "n:맛"], ["flesh", "/fleʃ/", "n:살"], ["flight", "/flaɪt/", "n:비행"], ["float", "/fləʊt/", "v:뜨다"], ["flood", "/flʌd/", "n:홍수"],
+            ["floor", "/flɔːr/", "n:바닥"], ["flour", "/flaʊər/", "n:밀가루"], ["flow", "/fləʊ/", "v:흐르다"], ["flower", "/ˈflaʊ.ər/", "n:꽃"], ["flu", "/fluː/", "n:독감"],
+            ["fly", "/flaɪ/", "v:날다"], ["flying", "/ˈflaɪ.ɪŋ/", "adj:비행의"], ["focus", "/ˈfəʊ.kəs/", "n:초점"], ["fold", "/fəʊld/", "v:접다"], ["folding", "/ˈfəʊl.dɪŋ/", "adj:접이식의"],
+            ["folk", "/fəʊk/", "n:민속"], ["follow", "/ˈfɒl.əʊ/", "v:따라가다"], ["following", "/ˈfɒl.əʊ.ɪŋ/", "adj:다음의"], ["food", "/fuːd/", "n:음식"], ["foot", "/fʊt/", "n:발"],
+            ["football", "/ˈfʊt.bɔːl/", "n:축구"], ["for", "/fɔːr/", "prep:위하여"], ["force", "/fɔːs/", "n:힘"], ["foreign", "/ˈfɒr.ən/", "adj:외국의"], ["forest", "/ˈfɒr.ɪst/", "n:숲"],
+            ["forever", "/fəˈre.vər/", "adv:영원히"], ["forget", "/fəˈɡet/", "v:잊다"], ["forgive", "/fəˈɡɪv/", "v:용서하다"], ["fork", "/fɔːk/", "n:포크"], ["form", "/fɔːm/", "n:형태"],
+            ["formal", "/ˈfɔː.məl/", "adj:격식 있는"], ["former", "/ˈfɔː.mər/", "adj:이전의"], ["fortunately", "/ˈfɔː.tʃən.ət.li/", "adv:다행히도"], ["fortune", "/ˈfɔː.tʃuːn/", "n:운"], ["forty", "/ˈfɔː.ti/", "num:40"],
+            ["forward", "/ˈfɔː.wəd/", "adv:앞으로"], ["found", "/faʊnd/", "v:설립하다"], ["foundation", "/faʊnˈdeɪ.ʃən/", "n:기초"], ["four", "/fɔːr/", "num:4"], ["fourteen", "/ˌfɔːˈtiːn/", "num:14"],
+            ["fourth", "/fɔːθ/", "num:넷째"], ["frame", "/freɪm/", "n:틀"], ["free", "/friː/", "adj:자유로운"], ["freedom", "/ˈfriː.dəm/", "n:자유"], ["freely", "/ˈfriː.li/", "adv:자유롭게"],
+            ["freeze", "/friːz/", "v:얼다"], ["frequent", "/ˈfriː.kwənt/", "adj:빈번한"], ["frequently", "/ˈfriː.kwənt.li/", "adv:자주"], ["fresh", "/freʃ/", "adj:신선한"], ["friday", "/ˈfraɪ.deɪ/", "n:금요일"],
+            ["fridge", "/frɪdʒ/", "n:냉장고"], ["friend", "/frend/", "n:친구"], ["friendly", "/ˈfrend.li/", "adj:친절한"], ["friendship", "/ˈfrend.ʃɪp/", "n:우정"], ["frighten", "/ˈfraɪ.tən/", "v:겁주다"],
+            ["frightened", "/ˈfraɪ.tənd/", "adj:겁먹은"], ["frightening", "/ˈfraɪ.tən.ɪŋ/", "adj:무서운"], ["frog", "/frɒɡ/", "n:개구리"], ["from", "/frɒm/", "prep:부터"], ["front", "/frʌnt/", "n:앞"],
+            ["frozen", "/ˈfrəʊ.zən/", "adj:얼어붙은"], ["fruit", "/fruːt/", "n:과일"], ["fry", "/fraɪ/", "v:튀기다"], ["fuel", "/fjʊəl/", "n:연료"], ["full", "/fʊl/", "adj:가득 찬"],
+            ["fully", "/ˈfʊl.i/", "adv:완전히"], ["fun", "/fʌn/", "n:재미"], ["function", "/ˈfʌŋk.ʃən/", "n:기능"], ["fund", "/fʌnd/", "n:자금"], ["fundamental", "/ˌfʌn.dəˈmen.təl/", "adj:근본적인"],
+            ["funding", "/ˈfʌn.dɪŋ/", "n:자금 지원"], ["funeral", "/ˈfjuː.nər.əl/", "n:장례식"], ["funny", "/ˈfʌn.i/", "adj:웃기는"], ["fur", "/fɜːr/", "n:털"], ["furniture", "/ˈfɜː.nɪ.tʃər/", "n:가구"],
+            ["further", "/ˈfɜː.ðər/", "adj:더 먼"], ["future", "/ˈfjuː.tʃər/", "n:미래"], ["gain", "/ɡeɪn/", "v:얻다"], ["gallery", "/ˈɡæl.ər.i/", "n:갤러리"], ["game", "/ɡeɪm/", "n:게임"],
+            ["gang", "/ɡæŋ/", "n:갱"], ["gap", "/ɡæp/", "n:격차"], ["garage", "/ˈɡær.ɑːʒ/", "n:차고"], ["garden", "/ˈɡɑː.dən/", "n:정원"], ["gas", "/ɡæs/", "n:가스"],
+            ["gate", "/ɡeɪt/", "n:문"], ["gather", "/ˈɡæð.ər/", "v:모으다"], ["general", "/ˈdʒen.ər.əl/", "adj:일반적인"], ["generally", "/ˈdʒen.ər.əl.i/", "adv:일반적으로"], ["generate", "/ˈdʒen.ə.reɪt/", "v:생성하다"],
+            ["generation", "/ˌdʒen.əˈreɪ.ʃən/", "n:세대"], ["generous", "/ˈdʒen.ər.əs/", "adj:관대한"], ["gentle", "/ˈdʒen.təl/", "adj:온화한"], ["gentleman", "/ˈdʒen.təl.mən/", "n:신사"], ["geography", "/dʒiˈɒɡ.rə.fi/", "n:지리학"],
+            ["get", "/ɡet/", "v:얻다"], ["ghost", "/ɡəʊst/", "n:유령"], ["giant", "/ˈdʒaɪ.ənt/", "adj:거대한"], ["gift", "/ɡɪft/", "n:선물"], ["girl", "/ɡɜːl/", "n:소녀"],
+            ["girlfriend", "/ˈɡɜːl.frend/", "n:여자친구"], ["give", "/ɡɪv/", "v:주다"], ["glad", "/ɡlæd/", "adj:기쁜"], ["glass", "/ɡlɑːs/", "n:유리"], ["glasses", "/ˈɡlɑː.sɪz/", "n:안경"],
+            ["global", "/ˈɡləʊ.bəl/", "adj:세계적인"], ["glove", "/ɡlʌv/", "n:장갑"], ["go", "/ɡəʊ/", "v:가다"], ["goal", "/ɡəʊl/", "n:목표"], ["god", "/ɡɒd/", "n:신"],
+            ["gold", "/ɡəʊld/", "n:금"], ["golden", "/ˈɡəʊl.dən/", "adj:황금색의"], ["golf", "/ɡɒlf/", "n:골프"], ["good", "/ɡʊd/", "adj:좋은"], ["goodbye", "/ɡʊdˈbaɪ/", "n:작별"],
+            ["goods", "/ɡʊdz/", "n:상품"], ["govern", "/ˈɡʌv.ən/", "v:통치하다"], ["government", "/ˈɡʌv.ən.mənt/", "n:정부"], ["governor", "/ˈɡʌv.ən.ər/", "n:주지사"], ["grab", "/ɡræb/", "v:잡다"],
+            ["grade", "/ɡreɪd/", "n:등급"], ["gradually", "/ˈɡræd.ʒu.ə.li/", "adv:점차적으로"], ["graduate", "/ˈɡræd.ʒu.eɪt/", "v:졸업하다"], ["grain", "/ɡreɪn/", "n:곡물"], ["gram", "/ɡræm/", "n:그램"],
+            ["grammar", "/ˈɡræm.ər/", "n:문법"], ["grand", "/ɡrænd/", "adj:웅장한"], ["grandchild", "/ˈɡræn.tʃaɪld/", "n:손주"], ["grandfather", "/ˈɡræn.fɑː.ðər/", "n:할아버지"], ["grandmother", "/ˈɡræn.mʌð.ər/", "n:할머니"],
+            ["grandparent", "/ˈɡræn.peə.rənt/", "n:조부모"], ["grant", "/ɡrɑːnt/", "v:승인하다"], ["grass", "/ɡrɑːs/", "n:잔디"], ["grateful", "/ˈɡreɪt.fəl/", "adj:감사하는"], ["great", "/ɡreɪt/", "adj:위대한"],
+            ["greatly", "/ˈɡreɪt.li/", "adv:대단히"], ["green", "/ɡriːn/", "adj:녹색의"], ["grey", "/ɡreɪ/", "adj:회색의"], ["grocery", "/ˈɡrəʊ.sər.i/", "n:식료품"], ["ground", "/ɡraʊnd/", "n:땅"],
+            ["group", "/ɡruːp/", "n:그룹"], ["grow", "/ɡrəʊ/", "v:자라다"], ["growth", "/ɡrəʊθ/", "n:성장"], ["guarantee", "/ˌɡær.ənˈtiː/", "v:보장하다"], ["guard", "/ɡɑːd/", "n:경비"],
+            ["guess", "/ɡes/", "v:추측하다"], ["guest", "/ɡest/", "n:손님"], ["guide", "/ɡaɪd/", "n:안내"], ["guilty", "/ˈɡɪl.ti/", "adj:유죄의"], ["guitar", "/ɡɪˈtɑːr/", "n:기타"],
+            ["gun", "/ɡʌn/", "n:총"], ["guy", "/ɡaɪ/", "n:남자"], ["gym", "/dʒɪm/", "n:체육관"], ["habit", "/ˈhæb.ɪt/", "n:습관"], ["hair", "/heər/", "n:머리카락"],
+            ["half", "/hɑːf/", "n:절반"], ["hall", "/hɔːl/", "n:홀"], ["hand", "/hænd/", "n:손"], ["handle", "/ˈhæn.dəl/", "v:다루다"], ["hang", "/hæŋ/", "v:걸다"],
+            ["happen", "/ˈhæp.ən/", "v:일어난다"], ["happily", "/ˈhæp.əl.i/", "adv:행복하게"], ["happiness", "/ˈhæp.i.nəs/", "n:행복"], ["happy", "/ˈhæp.i/", "adj:행복한"], ["hard", "/hɑːd/", "adj:어려운"],
+            ["hardly", "/ˈhɑːd.li/", "adv:거의 ~않다"], ["harm", "/hɑːm/", "n:해"], ["harmful", "/ˈhɑːm.fəl/", "adj:해로운"], ["hat", "/hæt/", "n:모자"], ["hate", "/heɪt/", "v:미워하다"],
+            ["hatred", "/ˈheɪ.trɪd/", "n:증오"], ["have", "/hæv/", "v:가지다"], ["he", "/hiː/", "pron:그는"], ["head", "/hed/", "n:머리"], ["headache", "/ˈhed.eɪk/", "n:두통"],
             ["headline", "/ˈhed.laɪn/", "n:표제"], ["health", "/helθ/", "n:건강"], ["healthy", "/ˈhel.θi/", "adj:건강한"], ["hear", "/hɪər/", "v:듣다"], ["hearing", "/ˈhɪə.rɪŋ/", "n:청력"],
-            ["heart", "/hɑːt/", "n:심장, 마음"], ["heat", "/hiːt/", "n:열", "v:가열하다"], ["heating", "/ˈhiː.tɪŋ/", "n:난방"], ["heaven", "/ˈhev.ən/", "n:천국"], ["heavy", "/ˈhev.i/", "adj:무거운"],
-            ["height", "/haɪt/", "n:높이, 키"], ["helicopter", "/ˈhel.ɪˌkɒp.tər/", "n:헬리콥터"], ["hell", "/hel/", "n:지옥"], ["hello", "/həˈləʊ/", "int:안녕"], ["help", "/help/", "v:돕다", "n:도움"],
-            ["helpful", "/ˈhelp.fəl/", "adj:도움이 되는"], ["her", "/hɜːr/", "det:그녀의", "pron:그녀를"], ["here", "/hɪər/", "adv:여기에"], ["hero", "/ˈhɪə.rəʊ/", "n:영웅"], ["hers", "/hɜːz/", "pron:그녀의 것"],
-            ["herself", "/həˈself/", "pron:그녀 자신"], ["hesitate", "/ˈhez.ɪ.teɪt/", "v:주저하다"], ["hide", "/haɪd/", "v:숨기다"], ["high", "/haɪ/", "adj:높은"], ["highlight", "/ˈhaɪ.laɪt/", "v:강조하다", "n:하이라이트"],
-            ["highly", "/ˈhaɪ.li/", "adv:매우"], ["hill", "/hɪl/", "n:언덕"], ["him", "/hɪm/", "pron:그를"], ["himself", "/hɪmˈself/", "pron:그 자신"], ["hire", "/haɪər/", "v:고용하다"],
-            ["his", "/hɪz/", "det:그의"], ["historic", "/hɪˈstɒr.ɪk/", "adj:역사적인"], ["historical", "/hɪˈstɒr.ɪ.kəl/", "adj:역사의"], ["history", "/ˈhɪs.tər.i/", "n:역사"], ["hit", "/hɪt/", "v:치다", "n:타격"],
-            ["hobby", "/ˈhɒb.i/", "n:취미"], ["hockey", "/ˈhɒk.i/", "n:하키"], ["hold", "/həʊld/", "v:잡다, 개최하다"], ["hole", "/həʊl/", "n:구멍"], ["holiday", "/ˈhɒl.ə.deɪ/", "n:휴일"],
-            ["hollow", "/ˈhɒl.əʊ/", "adj:속이 빈"], ["holy", "/ˈhəʊ.li/", "adj:신성한"], ["home", "/həʊm/", "n:집", "adv:집으로"], ["homework", "/ˈhəʊm.wɜːk/", "n:숙제"], ["honest", "/ˈɒn.ɪst/", "adj:정직한"],
-            ["honestly", "/ˈɒn.ɪst.li/", "adv:솔직히"], ["honey", "/ˈhʌn.i/", "n:꿀"], ["honour", "/ˈɒn.ər/", "n:명예", "v:존경하다"], ["hook", "/hʊk/", "n:갈고리"], ["hope", "/həʊp/", "v:희망하다", "n:희망"],
-            ["horror", "/ˈhɒr.ər/", "n:공포"], ["horse", "/hɔːs/", "n:말"], ["hospital", "/ˈhɒs.pɪ.təl/", "n:병원"], ["host", "/həʊst/", "n:주인", "v:주최하다"], ["hot", "/hɒt/", "adj:뜨거운, 더운"],
-            ["hotel", "/həʊˈtel/", "n:호텔"], ["hour", "/aʊər/", "n:시간"], ["house", "/haʊs/", "n:집"], ["household", "/ˈhaʊs.həʊld/", "n:가정"], ["housing", "/ˈhaʊ.zɪŋ/", "n:주택"],
-            ["how", "/haʊ/", "adv:어떻게"], ["however", "/haʊˈev.ər/", "adv:하지만"], ["huge", "/hjuːdʒ/", "adj:거대한"], ["human", "/ˈhjuː.mən/", "adj:인간의", "n:인간"], ["humorous", "/ˈhjuː.mə.rəs/", "adj:유머러스한"],
-            ["humour", "/ˈhjuː.mər/", "n:유머"], ["hundred", "/ˈhʌn.drəd/", "num:100, 백"], ["hungry", "/ˈhʌŋ.ɡri/", "adj:배고픈"], ["hunt", "/hʌnt/", "v:사냥하다"], ["hunting", "/ˈhʌn.tɪŋ/", "n:사냥"],
-            ["hurricane", "/ˈhʌr.ɪ.kən/", "n:허리케인"], ["hurry", "/ˈhʌr.i/", "v:서두르다"], ["hurt", "/hɜːt/", "v:다치게 하다", "adj:다친"], ["husband", "/ˈhʌz.bənd/", "n:남편"], ["i", "/aɪ/", "pron:나는"]
+            ["heart", "/hɑːt/", "n:심장"], ["heat", "/hiːt/", "n:열"], ["heating", "/ˈhiː.tɪŋ/", "n:난방"], ["heaven", "/ˈhev.ən/", "n:천국"], ["heavy", "/ˈhev.i/", "adj:무거운"],
+            ["height", "/haɪt/", "n:높이"], ["helicopter", "/ˈhel.ɪˌkɒp.tər/", "n:헬리콥터"], ["hell", "/hel/", "n:지옥"], ["hello", "/həˈləʊ/", "int:안녕"], ["help", "/help/", "v:돕다"],
+            ["helpful", "/ˈhelp.fəl/", "adj:도움이 되는"], ["her", "/hɜːr/", "det:그녀의"], ["here", "/hɪər/", "adv:여기에"], ["hero", "/ˈhɪə.rəʊ/", "n:영웅"], ["hers", "/hɜːz/", "pron:그녀의 것"],
+            ["herself", "/həˈself/", "pron:그녀 자신"], ["hesitate", "/ˈhez.ɪ.teɪt/", "v:주저하다"], ["hi", "/haɪ/", "int:안녕"], ["hide", "/haɪd/", "v:숨기다"], ["high", "/haɪ/", "adj:높은"],
+            ["highlight", "/ˈhaɪ.laɪt/", "v:강조하다"], ["highly", "/ˈhaɪ.li/", "adv:매우"], ["highway", "/ˈhaɪ.weɪ/", "n:고속도로"], ["hill", "/hɪl/", "n:언덕"], ["him", "/hɪm/", "pron:그를"],
+            ["himself", "/hɪmˈself/", "pron:그 자신"], ["hire", "/haɪər/", "v:고용하다"], ["his", "/hɪz/", "det:그의"], ["historic", "/hɪˈstɒr.ɪk/", "adj:역사적인"], ["historical", "/hɪˈstɒr.ɪ.kəl/", "adj:역사의"],
+            ["history", "/ˈhɪs.tər.i/", "n:역사"], ["hit", "/hɪt/", "v:치다"], ["hobby", "/ˈhɒb.i/", "n:취미"], ["hockey", "/ˈhɒk.i/", "n:하키"], ["hold", "/həʊld/", "v:잡다"],
+            ["hole", "/həʊl/", "n:구멍"], ["holiday", "/ˈhɒl.ə.deɪ/", "n:휴일"], ["hollow", "/ˈhɒl.əʊ/", "adj:속이 빈"], ["holy", "/ˈhəʊ.li/", "adj:신성한"], ["home", "/həʊm/", "n:집"],
+            ["homework", "/ˈhəʊm.wɜːk/", "n:숙제"], ["honest", "/ˈɒn.ɪst/", "adj:정직한"], ["honestly", "/ˈɒn.ɪst.li/", "adv:솔직히"], ["honey", "/ˈhʌn.i/", "n:꿀"], ["honour", "/ˈɒn.ər/", "n:명예"],
+            ["hook", "/hʊk/", "n:갈고리"], ["hope", "/həʊp/", "v:희망하다"], ["horror", "/ˈhɒr.ər/", "n:공포"], ["horse", "/hɔːs/", "n:말"], ["hospital", "/ˈhɒs.pɪ.təl/", "n:병원"],
+            ["host", "/həʊst/", "n:주인"], ["hot", "/hɒt/", "adj:뜨거운"], ["hotel", "/həʊˈtel/", "n:호텔"], ["hour", "/aʊər/", "n:시간"], ["house", "/haʊs/", "n:집"],
+            ["household", "/ˈhaʊs.həʊld/", "n:가정"], ["housing", "/ˈhaʊ.zɪŋ/", "n:주택"], ["how", "/haʊ/", "adv:어떻게"], ["however", "/haʊˈev.ər/", "adv:하지만"], ["huge", "/hjuːdʒ/", "adj:거대한"],
+            ["human", "/ˈhjuː.mən/", "adj:인간의"], ["humorous", "/ˈhjuː.mə.rəs/", "adj:유머러스한"], ["humour", "/ˈhjuː.mər/", "n:유머"], ["hundred", "/ˈhʌn.drəd/", "num:100"], ["hungry", "/ˈhʌŋ.ɡri/", "adj:배고픈"],
+            ["hunt", "/hʌnt/", "v:사냥하다"], ["hunting", "/ˈhʌn.tɪŋ/", "n:사냥"], ["hurricane", "/ˈhʌr.ɪ.kən/", "n:허리케인"], ["hurry", "/ˈhʌr.i/", "v:서두르다"], ["hurt", "/hɜːt/", "v:다치게 하다"],
+            ["husband", "/ˈhʌz.bənd/", "n:남편"], ["I", "/aɪ/", "pron:나는"], ["ice", "/aɪs/", "n:얼음"], ["ice cream", "/ˌaɪs ˈkriːm/", "n:아이스크림"], ["idea", "/aɪˈdɪə/", "n:아이디어"],
+            ["ideal", "/aɪˈdɪəl/", "adj:이상적인"], ["identify", "/aɪˈden.tɪ.faɪ/", "v:식별하다"], ["identity", "/aɪˈden.tə.ti/", "n:정체성"], ["if", "/ɪf/", "conj:만약"], ["ignore", "/ɪɡˈnɔːr/", "v:무시하다"],
+            ["ill", "/ɪl/", "adj:아픈"], ["illegal", "/ɪˈliː.ɡəl/", "adj:불법의"], ["illness", "/ˈɪl.nəs/", "n:병"], ["illustrate", "/ˈɪl.ə.streɪt/", "v:설명하다"], ["illustration", "/ˌɪl.əˈstreɪ.ʃən/", "n:삽화"],
+            ["image", "/ˈɪm.ɪdʒ/", "n:이미지"], ["imaginary", "/ɪˈmædʒ.ɪ.nər.i/", "adj:가상의"], ["imagination", "/ɪˌmædʒ.ɪˈneɪ.ʃən/", "n:상상력"], ["imagine", "/ɪˈmædʒ.ɪn/", "v:상상하다"], ["immediate", "/ɪˈmiː.di.ət/", "adj:즉각적인"],
+            ["immediately", "/ɪˈmiː.di.ət.li/", "adv:즉시"], ["immigrant", "/ˈɪm.ɪ.ɡrənt/", "n:이민자"], ["immigration", "/ˌɪm.ɪˈɡreɪ.ʃən/", "n:이민"], ["impact", "/ˈɪm.pækt/", "n:영향"], ["impatient", "/ɪmˈpeɪ.ʃənt/", "adj:참을성 없는"],
+            ["implication", "/ˌɪm.plɪˈkeɪ.ʃən/", "n:함축"], ["imply", "/ɪmˈplaɪ/", "v:암시하다"], ["import", "/ɪmˈpɔːt/", "n:수입"], ["importance", "/ɪmˈpɔː.təns/", "n:중요성"], ["important", "/ɪmˈpɔː.tənt/", "adj:중요한"],
+            ["impose", "/ɪmˈpəʊz/", "v:부과하다"], ["impossible", "/ɪmˈpɒs.ə.bəl/", "adj:불가능한"], ["impress", "/ɪmˈpres/", "v:인상을 주다"], ["impressed", "/ɪmˈprest/", "adj:감동받은"], ["impression", "/ɪmˈpreʃ.ən/", "n:인상"],
+            ["impressive", "/ɪmˈpres.ɪv/", "adj:인상적인"], ["improve", "/ɪmˈpruːv/", "v:개선하다"], ["improvement", "/ɪmˈpruːv.mənt/", "n:개선"], ["in", "/ɪn/", "prep:안에"], ["inability", "/ˌɪn.əˈbɪl.ə.ti/", "n:무능력"],
+            ["inch", "/ɪntʃ/", "n:인치"], ["incident", "/ˈɪn.sɪ.dənt/", "n:사건"], ["include", "/ɪnˈkluːd/", "v:포함하다"], ["including", "/ɪnˈkluː.dɪŋ/", "prep:포함하여"], ["income", "/ˈɪn.kʌm/", "n:소득"],
+            ["increase", "/ɪnˈkriːs/", "v:증가하다"], ["increasingly", "/ɪnˈkriː.sɪŋ.li/", "adv:점점 더"], ["incredible", "/ɪnˈkred.ə.bəl/", "adj:놀라운"], ["incredibly", "/ɪnˈkred.ə.bli/", "adv:믿을 수 없을 정도로"], ["indeed", "/ɪnˈdiːd/", "adv:정말로"],
+            ["independence", "/ˌɪn.dɪˈpen.dəns/", "n:독립"], ["independent", "/ˌɪn.dɪˈpen.dənt/", "adj:독립적인"], ["index", "/ˈɪn.deks/", "n:색인"], ["indicate", "/ˈɪn.dɪ.keɪt/", "v:나타내다"], ["indication", "/ˌɪn.dɪˈkeɪ.ʃən/", "n:표시"],
+            ["indirect", "/ˌɪn.daɪˈrekt/", "adj:간접적인"], ["individual", "/ˌɪn.dɪˈvɪd.ju.əl/", "n:개인"], ["indoor", "/ˈɪn.dɔːr/", "adj:실내의"], ["indoors", "/ˌɪnˈdɔːz/", "adv:실내에서"], ["industrial", "/ɪnˈdʌs.tri.əl/", "adj:산업의"],
+            ["industry", "/ˈɪn.də.stri/", "n:산업"], ["inevitable", "/ɪnˈev.ɪ.tə.bəl/", "adj:피할 수 없는"], ["inevitably", "/ɪnˈev.ɪ.tə.bli/", "adv:필연적으로"], ["infect", "/ɪnˈfekt/", "v:감염시키다"], ["infection", "/ɪnˈfek.ʃən/", "n:감염"],
+            ["infectious", "/ɪnˈfek.ʃəs/", "adj:전염성의"], ["influence", "/ˈɪn.flu.əns/", "n:영향"], ["inform", "/ɪnˈfɔːm/", "v:알리다"], ["informal", "/ɪnˈfɔː.məl/", "adj:비격식적인"], ["information", "/ˌɪn.fəˈmeɪ.ʃən/", "n:정보"],
+            ["ingredient", "/ɪnˈɡriː.di.ənt/", "n:재료"], ["initial", "/ɪˈnɪʃ.əl/", "adj:처음의"], ["initially", "/ɪˈnɪʃ.əl.i/", "adv:처음에"], ["initiative", "/ɪˈnɪʃ.ə.tɪv/", "n:계획"], ["injure", "/ˈɪn.dʒər/", "v:다치게 하다"],
+            ["injured", "/ˈɪn.dʒəd/", "adj:다친"], ["injury", "/ˈɪn.dʒər.i/", "n:부상"], ["ink", "/ɪŋk/", "n:잉크"], ["inner", "/ˈɪn.ər/", "adj:내부의"], ["innocent", "/ˈɪn.ə.sənt/", "adj:죄 없는"],
+            ["inquiry", "/ɪnˈkwaɪə.ri/", "n:조사"], ["insect", "/ˈɪn.sekt/", "n:곤충"], ["insert", "/ɪnˈsɜːt/", "v:삽입하다"], ["inside", "/ɪnˈsaɪd/", "prep:안에"], ["insist", "/ɪnˈsɪst/", "v:주장하다"],
+            ["inspect", "/ɪnˈspekt/", "v:검사하다"], ["inspection", "/ɪnˈspek.ʃən/", "n:검사"], ["inspector", "/ɪnˈspek.tər/", "n:조사관"], ["install", "/ɪnˈstɔːl/", "v:설치하다"], ["instance", "/ˈɪn.stəns/", "n:사례"],
+            ["instant", "/ˈɪn.stənt/", "adj:즉각적인"], ["instantly", "/ˈɪn.stənt.li/", "adv:즉시"], ["instead", "/ɪnˈsted/", "adv:대신에"], ["instinct", "/ˈɪn.stɪŋkt/", "n:본능"], ["institute", "/ˈɪn.stɪ.tjuːt/", "n:연구소"],
+            ["institution", "/ˌɪn.stɪˈtjuː.ʃən/", "n:기관"], ["instruction", "/ɪnˈstrʌk.ʃən/", "n:지시"], ["instructor", "/ɪnˈstrʌk.tər/", "n:강사"], ["instrument", "/ˈɪn.strə.mənt/", "n:도구"], ["insult", "/ɪnˈsʌlt/", "v:모욕하다"],
+            ["insurance", "/ɪnˈʃɔː.rəns/", "n:보험"], ["intelligence", "/ɪnˈtel.ɪ.dʒəns/", "n:지능"], ["intelligent", "/ɪnˈtel.ɪ.dʒənt/", "adj:지능적인"], ["intend", "/ɪnˈtend/", "v:의도하다"], ["intended", "/ɪnˈten.dɪd/", "adj:의도된"],
+            ["intense", "/ɪnˈtens/", "adj:강렬한"], ["intention", "/ɪnˈten.ʃən/", "n:의도"], ["interest", "/ˈɪn.trəst/", "n:흥미"], ["interested", "/ˈɪn.trəs.tɪd/", "adj:흥미 있는"], ["interesting", "/ˈɪn.trəs.tɪŋ/", "adj:흥미로운"],
+            ["interior", "/ɪnˈtɪə.ri.ər/", "n:내부"], ["internal", "/ɪnˈtɜː.nəl/", "adj:내부의"], ["international", "/ˌɪn.təˈnæʃ.ən.əl/", "adj:국제적인"], ["internet", "/ˈɪn.tə.net/", "n:인터넷"], ["interpret", "/ɪnˈtɜː.prɪt/", "v:해석하다"],
+            ["interpretation", "/ɪnˌtɜː.prəˈteɪ.ʃən/", "n:해석"], ["interrupt", "/ˌɪn.təˈrʌpt/", "v:방해하다"], ["interruption", "/ˌɪn.təˈrʌp.ʃən/", "n:중단"], ["interval", "/ˈɪn.tə.vəl/", "n:간격"], ["interview", "/ˈɪn.tə.vjuː/", "n:인터뷰"],
+            ["into", "/ˈɪn.tuː/", "prep:안으로"], ["introduce", "/ˌɪn.trəˈdjuːs/", "v:소개하다"], ["introduction", "/ˌɪn.trəˈdʌk.ʃən/", "n:소개"], ["invent", "/ɪnˈvent/", "v:발명하다"], ["invention", "/ɪnˈven.ʃən/", "n:발명"],
+            ["invest", "/ɪnˈvest/", "v:투자하다"], ["investigate", "/ɪnˈves.tɪ.ɡeɪt/", "v:조사하다"], ["investigation", "/ɪnˌves.tɪˈɡeɪ.ʃən/", "n:조사"], ["investment", "/ɪnˈvest.mənt/", "n:투자"], ["investor", "/ɪnˈves.tər/", "n:투자자"],
+            ["invitation", "/ˌɪn.vɪˈteɪ.ʃən/", "n:초대"], ["invite", "/ɪnˈvaɪt/", "v:초대하다"], ["involve", "/ɪnˈvɒlv/", "v:포함하다"], ["involved", "/ɪnˈvɒlvd/", "adj:관련된"], ["involvement", "/ɪnˈvɒlv.mənt/", "n:관여"],
+            ["iron", "/laɪən/", "n:다리미, 철"], ["island", "/ˈaɪ.lənd/", "n:섬"], ["issue", "/ˈɪʃ.uː/", "n:문제"], ["it", "/ɪt/", "pron:그것"], ["item", "/ˈaɪ.təm/", "n:항목"],
+            ["its", "/ɪts/", "det:그것의"], ["itself", "/ɪtˈself/", "pron:그것 자체"], ["jacket", "/ˈdʒæk.ɪt/", "n:재킷"], ["jail", "/dʒeɪl/", "n:감옥"], ["jam", "/dʒæm/", "n:잼"],
+            ["january", "/ˈdʒæn.ju.ə.ri/", "n:1월"], ["jazz", "/dʒæz/", "n:재즈"], ["jeans", "/dʒiːnz/", "n:청바지"], ["jelly", "/ˈdʒel.i/", "n:젤리"], ["jewellery", "/ˈdʒuː.əl.ri/", "n:보석"],
+            ["job", "/dʒɒb/", "n:직업"], ["join", "/dʒɔɪn/", "v:가입하다"], ["joint", "/dʒɔɪnt/", "adj:공동의"], ["joke", "/dʒəʊk/", "n:농담"], ["journalist", "/ˈdʒɜː.nə.lɪst/", "n:기자"],
+            ["journey", "/ˈdʒɜː.ni/", "n:여행"], ["joy", "/dʒɔɪ/", "n:기쁨"], ["judge", "/dʒʌdʒ/", "n:판사"], ["judgement", "/ˈdʒʌdʒ.mənt/", "n:판단"], ["juice", "/dʒuːs/", "n:주스"],
+            ["july", "/dʒuˈlaɪ/", "n:7월"], ["jump", "/dʒʌmp/", "v:점프하다"], ["june", "/dʒuːn/", "n:6월"], ["junior", "/ˈdʒuː.ni.ər/", "adj:후배의"], ["jury", "/ˈdʒʊə.ri/", "n:배심원"],
+            ["just", "/dʒʌst/", "adv:방금"], ["justice", "/ˈdʒʌs.tɪs/", "n:정의"], ["justify", "/ˈdʒʌs.tɪ.faɪ/", "v:정당화하다"], ["keen", "/kiːn/", "adj:열정적인"], ["keep", "/kiːp/", "v:유지하다"],
+            ["key", "/kiː/", "n:열쇠"], ["keyboard", "/ˈkiː.bɔːd/", "n:키보드"], ["kick", "/kɪk/", "v:차다"], ["kid", "/kɪd/", "n:아이"], ["kill", "/kɪl/", "v:죽이다"],
+            ["killing", "/ˈkɪl.ɪŋ/", "n:살해"], ["kilogram", "/ˈkɪl.ə.ɡræm/", "n:킬로그램"], ["kilometer", "/kɪˈlɒm.ɪ.tər/", "n:킬로미터"], ["kind", "/kaɪnd/", "adj:친절한"], ["king", "/kɪŋ/", "n:왕"],
+            ["kiss", "/kɪs/", "v:키스하다"], ["kit", "/kɪt/", "n:조립 용품"], ["kitchen", "/ˈkɪtʃ.ən/", "n:부엌"], ["knee", "/niː/", "n:무릎"], ["knife", "/naɪf/", "n:칼"],
+            ["knock", "/nɒk/", "v:두드리다"], ["knot", "/nɒt/", "n:매듭"], ["know", "/nəʊ/", "v:알다"], ["knowledge", "/ˈnɒl.ɪdʒ/", "n:지식"], ["label", "/ˈleɪ.bəl/", "n:라벨"],
+            ["laboratory", "/ləˈbɒr.ə.tri/", "n:실험실"], ["labour", "/ˈleɪ.bər/", "n:노동"], ["lack", "/læk/", "n:부족"], ["lady", "/ˈleɪ.di/", "n:숙녀"], ["lake", "/leɪk/", "n:호수"],
+            ["lamp", "/læmp/", "n:램프"], ["land", "/lænd/", "n:땅"], ["landscape", "/ˈlænd.skeɪp/", "n:풍경"], ["lane", "/leɪn/", "n:차선"], ["language", "/ˈlæŋ.ɡwɪdʒ/", "n:언어"],
+            ["large", "/lɑːdʒ/", "adj:큰"], ["largely", "/ˈlɑːdʒ.li/", "adv:대체로"], ["last", "/lɑːst/", "adj:지난"], ["late", "/leɪt/", "adj:늦은"], ["later", "/ˈleɪ.tər/", "adv:나중에"],
+            ["latest", "/ˈleɪ.tɪst/", "adj:최신의"], ["latter", "/ˈlæt.ər/", "adj:후자의"], ["laugh", "/lɑːf/", "v:웃다"], ["launch", "/lɔːntʃ/", "v:시작하다"], ["law", "/lɔː/", "n:법"],
+            ["lawyer", "/ˈlɔɪ.ər/", "n:변호사"], ["lay", "/leɪ/", "v:놓다"], ["layer", "/ˈleɪ.ər/", "n:층"], ["lazy", "/ˈleɪ.zi/", "adj:게으른"], ["lead", "/liːd/", "v:이끌다"],
+            ["leader", "/ˈliː.dər/", "n:지도자"], ["leadership", "/ˈliː.də.ʃɪp/", "n:리더십"], ["leaf", "/liːf/", "n:잎"], ["league", "/liːɡ/", "n:리그"], ["lean", "/liːn/", "v:기대다"],
+            ["learn", "/lɜːn/", "v:배우다"], ["learning", "/ˈlɜː.nɪŋ/", "n:학습"], ["least", "/liːst/", "adv:적어도"], ["leather", "/ˈleð.ər/", "n:가죽"], ["leave", "/liːv/", "v:떠나다"],
+            ["lecture", "/ˈlek.tʃər/", "n:강의"], ["left", "/left/", "adj:왼쪽의"], ["leg", "/leɡ/", "n:다리"], ["legal", "/ˈliː.ɡəl/", "adj:합법적인"], ["legend", "/ˈledʒ.ənd/", "n:전설"],
+            ["leisure", "/ˈleʒ.ər/", "n:여가"], ["lemon", "/ˈlem.ən/", "n:레몬"], ["lend", "/lend/", "v:빌려주다"], ["length", "/leŋθ/", "n:길이"], ["less", "/les/", "adv:덜"],
+            ["lesson", "/ˈles.ən/", "n:수업"], ["let", "/let/", "v:하게 하다"], ["letter", "/ˈlet.ər/", "n:편지"], ["level", "/ˈlev.əl/", "n:수준"], ["liberal", "/ˈlɪb.ər.əl/", "adj:자유주의의"],
+            ["library", "/ˈlaɪ.brər.i/", "n:도서관"], ["licence", "/ˈlaɪ.səns/", "n:면허"], ["license", "/ˈlaɪ.səns/", "v:허가하다"], ["lid", "/lɪd/", "n:뚜껑"], ["lie", "/laɪ/", "v:거짓말하다"],
+            ["life", "/laɪf/", "n:삶"], ["lifestyle", "/ˈlaɪf.staɪl/", "n:생활 방식"], ["lift", "/lɪft/", "v:들어올리다"], ["light", "/laɪt/", "n:빛"], ["like", "/laɪk/", "v:좋아하다"],
+            ["likely", "/ˈlaɪ.kli/", "adj:가능성 있는"], ["limit", "/ˈlɪm.ɪt/", "n:한계"], ["limitation", "/ˌlɪm.ɪˈteɪ.ʃən/", "n:제한"], ["limited", "/ˈlɪm.ɪ.tɪd/", "adj:제한된"], ["line", "/laɪn/", "n:선"],
+            ["link", "/lɪŋk/", "n:연결"], ["lip", "/lɪp/", "n:입술"], ["liquid", "/ˈlɪk.wɪd/", "n:액체"], ["list", "/lɪst/", "n:목록"], ["listen", "/ˈlɪs.ən/", "v:듣다"],
+            ["listener", "/ˈlɪs.ən.ər/", "n:청취자"], ["literature", "/ˈlɪt.rə.tʃər/", "n:문학"], ["little", "/ˈlɪt.əl/", "adj:작은"], ["live", "/lɪv/", "v:살다"], ["lively", "/ˈlaɪv.li/", "adj:활기찬"],
+            ["living", "/ˈlɪv.ɪŋ/", "adj:살아있는"], ["load", "/ləʊd/", "n:짐"], ["loan", "/ləʊn/", "n:대출"], ["local", "/ˈləʊ.kəl/", "adj:지역의"], ["locate", "/ləʊˈkeɪt/", "v:위치시키다"],
+            ["location", "/ləʊˈkeɪ.ʃən/", "n:위치"], ["lock", "/lɒk/", "v:잠그다"], ["logic", "/ˈlɒdʒ.ɪk/", "n:논리"], ["logical", "/ˈlɒdʒ.ɪ.kəl/", "adj:논리적인"], ["lonely", "/ˈləʊn.li/", "adj:외로운"],
+            ["long", "/lɒŋ/", "adj:긴"], ["look", "/lʊk/", "v:보다"], ["loose", "/luːs/", "adj:느슨한"], ["lord", "/lɔːd/", "n:군주"], ["lorry", "/ˈlɒr.i/", "n:화물차"],
+            ["lose", "/luːz/", "v:잃다"], ["loss", "/lɒs/", "n:상실"], ["lost", "/lɒst/", "adj:길을 잃은"], ["lot", "/lɒt/", "n:많음"], ["loud", "/laʊd/", "adj:시끄러운"],
+            ["loudly", "/ˈlaʊd.li/", "adv:크게"], ["love", "/lʌv/", "n:사랑"], ["lovely", "/ˈlʌv.li/", "adj:사랑스러운"], ["low", "/ləʊ/", "adj:낮은"], ["loyal", "/ˈlɔɪ.əl/", "adj:충실한"],
+            ["luck", "/lʌk/", "n:행운"], ["lucky", "/ˈlʌk.i/", "adj:운 좋은"], ["luggage", "/ˈlʌɡ.ɪdʒ/", "n:짐"], ["lump", "/lʌmp/", "n:덩어리"], ["lunch", "/lʌntʃ/", "n:점심"],
+            ["lung", "/lʌŋ/", "n:폐"], ["luxury", "/ˈlʌk.ʃər.i/", "n:사치"], ["machine", "/məˈʃiːn/", "n:기계"], ["machinery", "/məˈʃiː.nər.i/", "n:기계류"], ["mad", "/mæd/", "adj:미친"],
+            ["magazine", "/ˌmæɡ.əˈziːn/", "n:잡지"], ["magic", "/ˈmædʒ.ɪk/", "n:마술"], ["mail", "/meɪl/", "n:우편"], ["main", "/meɪn/", "adj:주요한"], ["mainly", "/ˈmeɪn.li/", "adv:주로"],
+            ["maintain", "/meɪnˈteɪn/", "v:유지하다"], ["major", "/ˈmeɪ.dʒər/", "adj:주요한"], ["majority", "/məˈdʒɒr.ə.ti/", "n:다수"], ["make", "/meɪk/", "v:만들다"], ["maker", "/ˈmeɪ.kər/", "n:제작자"],
+            ["make-up", "/ˈmeɪk.ʌp/", "n:화장"], ["male", "/meɪl/", "adj:남성의"], ["mall", "/mɔːl/", "n:쇼핑몰"], ["man", "/mæn/", "n:남자"], ["manage", "/ˈmæn.ɪdʒ/", "v:관리하다"],
+            ["management", "/ˈmæn.ɪdʒ.mənt/", "n:경영"], ["manager", "/ˈmæn.ɪ.dʒər/", "n:매니저"], ["manner", "/ˈmæn.ər/", "n:방식"], ["manufacture", "/ˌmæn.jəˈfæk.tʃər/", "v:제조하다"], ["manufacturer", "/ˌmæn.jəˈfæk.tʃər.ər/", "n:제조업자"],
+            ["manufacturing", "/ˌmæn.jəˈfæk.tʃər.ɪŋ/", "n:제조업"], ["many", "/ˈmen.i/", "adj:많은"], ["map", "/mæp/", "n:지도"], ["march", "/mɑːtʃ/", "n:3월"], ["mark", "/mɑːk/", "n:표시"],
+            ["market", "/ˈmɑː.kɪt/", "n:시장"], ["marketing", "/ˈmɑː.kɪ.tɪŋ/", "n:마케팅"], ["marriage", "/ˈmær.ɪdʒ/", "n:결혼"], ["married", "/ˈmær.id/", "adj:결혼한"], ["marry", "/ˈmær.i/", "v:결혼하다"],
+            ["mass", "/mæs/", "n:덩어리"], ["massive", "/ˈmæs.ɪv/", "adj:거대한"], ["master", "/ˈmɑː.stər/", "n:주인"], ["match", "/mætʃ/", "n:경기"], ["mate", "/meɪt/", "n:친구"],
+            ["material", "/məˈtɪə.ri.əl/", "n:재료"], ["math", "/mæθ/", "n:수학"], ["mathematics", "/ˌmæθˈmæt.ɪks/", "n:수학"], ["matter", "/ˈmæt.ər/", "n:문제"], ["maximum", "/ˈmæk.sɪ.məm/", "adj:최대의"],
+            ["may", "/meɪ/", "v:일지도 모른다"], ["maybe", "/ˈmeɪ.bi/", "adv:아마도"], ["mayor", "/meər/", "n:시장"], ["me", "/miː/", "pron:나를"], ["meal", "/miːl/", "n:식사"],
+            ["mean", "/miːn/", "v:의미하다"], ["meaning", "/ˈmiː.nɪŋ/", "n:의미"], ["means", "/miːnz/", "n:수단"], ["meanwhile", "/ˈmiːn.waɪl/", "adv:그 동안에"], ["measure", "/ˈmeʒ.ər/", "v:측정하다"],
+            ["measurement", "/ˈmeʒ.ə.mənt/", "n:측정"], ["meat", "/miːt/", "n:고기"], ["media", "/ˈmiː.di.ə/", "n:미디어"], ["medical", "/ˈmed.ɪ.kəl/", "adj:의학의"], ["medicine", "/ˈmed.ɪ.sən/", "n:약"],
+            ["medium", "/ˈmiː.di.əm/", "n:매체"], ["meet", "/miːt/", "v:만나다"], ["meeting", "/ˈmiː.tɪŋ/", "n:회의"], ["melt", "/melt/", "v:녹다"], ["member", "/ˈmem.bər/", "n:회원"],
+            ["membership", "/ˈmem.bə.ʃɪp/", "n:회원 자격"], ["memory", "/ˈmem.ər.i/", "n:기억"], ["mental", "/ˈmen.təl/", "adj:정신의"], ["mentally", "/ˈmen.təl.i/", "adv:정신적으로"], ["mention", "/ˈmen.ʃən/", "v:언급하다"],
+            ["menu", "/ˈmen.juː/", "n:메뉴"], ["mere", "/mɪər/", "adj:단지"], ["merely", "/ˈmɪə.li/", "adv:단지"], ["mess", "/mes/", "n:엉망"], ["message", "/ˈmes.ɪdʒ/", "n:메시지"],
+            ["messy", "/ˈmes.i/", "adj:지저분한"], ["metal", "/ˈmet.əl/", "n:금속"], ["method", "/ˈmeθ.əd/", "n:방법"], ["metre", "/ˈmiː.tər/", "n:미터"], ["middle", "/ˈmɪd.əl/", "n:중간"],
+            ["midnight", "/ˈmɪd.naɪt/", "n:자정"], ["might", "/maɪt/", "v:일지도 모른다"], ["mild", "/maɪld/", "adj:온화한"], ["mile", "/maɪl/", "n:마일"], ["military", "/ˈmɪl.ɪ.tər.i/", "adj:군대의"],
+            ["milk", "/mɪlk/", "n:우유"], ["milligram", "/ˈmɪl.ɪ.ɡræm/", "n:밀리그램"], ["millimeter", "/ˈmɪl.ɪˌmiː.tər/", "n:밀리미터"], ["mind", "/maɪnd/", "n:마음"], ["mine", "/maɪn/", "pron:나의 것"],
+            ["mineral", "/ˈmɪn.ər.əl/", "n:광물"], ["minimum", "/ˈmɪn.ɪ.məm/", "n:최소한"], ["minister", "/ˈmɪn.ɪ.stər/", "n:장관"], ["ministry", "/ˈmɪn.ɪ.stri/", "n:부처"], ["minor", "/ˈmaɪ.nər/", "adj:사소한"],
+            ["minority", "/maɪˈnɒr.ə.ti/", "n:소수"], ["minute", "/ˈmɪn.ɪt/", "n:분"], ["mirror", "/ˈmɪr.ər/", "n:거울"], ["misery", "/ˈmɪz.ər.i/", "n:비참함"], ["miss", "/mɪs/", "v:놓치다"],
+            ["mission", "/ˈmɪʃ.ən/", "n:임무"], ["mistake", "/mɪˈsteɪk/", "n:실수"], ["mix", "/mɪks/", "v:섞다"], ["mixed", "/mɪkst/", "adj:혼합된"], ["mixture", "/ˈmɪks.tʃər/", "n:혼합물"],
+            ["mobile", "/ˈməʊ.baɪl/", "adj:이동식의"], ["mode", "/məʊd/", "n:방식"], ["model", "/ˈmɒd.əl/", "n:모델"], ["modern", "/ˈmɒd.ən/", "adj:현대의"], ["mom", "/mɒm/", "n:엄마"],
+            ["moment", "/ˈməʊ.mənt/", "n:순간"], ["money", "/ˈmʌn.i/", "n:돈"], ["monitor", "/ˈmɒn.ɪ.tər/", "n:화면"], ["monkey", "/ˈmʌŋ.ki/", "n:원숭이"], ["month", "/mʌnθ/", "n:달"],
+            ["mood", "/muːd/", "n:기분"], ["moon", "/muːn/", "n:달"], ["moral", "/ˈmɒr.əl/", "adj:도덕적인"], ["more", "/mɔːr/", "adv:더"], ["moreover", "/ˌmɔːrˈəʊ.vər/", "adv:게다가"],
+            ["morning", "/ˈmɔː.nɪŋ/", "n:아침"], ["mortgage", "/ˈmɔː.ɡɪdʒ/", "n:담보 대출"], ["most", "/məʊst/", "adv:가장"], ["mostly", "/ˈməʊst.li/", "adv:대개"], ["mother", "/ˈmʌð.ər/", "n:어머니"],
+            ["motion", "/ˈməʊ.ʃən/", "n:운동"], ["motivate", "/ˈməʊ.tɪ.veɪt/", "v:동기를 부여하다"], ["motivation", "/ˌməʊ.tɪˈveɪ.ʃən/", "n:동기"], ["motor", "/ˈməʊ.tər/", "n:모터"], ["motorbike", "/ˈməʊ.tə.baɪk/", "n:오토바이"],
+            ["motorcycle", "/ˈməʊ.təˌsaɪ.kəl/", "n:오토바이"], ["mount", "/maʊnt/", "v:오르다"], ["mountain", "/ˈmaʊn.tɪn/", "n:산"], ["mouse", "/maʊs/", "n:쥐"], ["mouth", "/maʊθ/", "n:입"],
+            ["move", "/muːv/", "v:움직이다"], ["movement", "/ˈmuːv.mənt/", "n:움직임"], ["movie", "/ˈmuː.vi/", "n:영화"], ["moving", "/ˈmuː.vɪŋ/", "adj:감동적인"], ["much", "/mʌtʃ/", "adv:많이"],
+            ["mud", "/mʌd/", "n:진흙"], ["multiply", "/ˈmʌl.tɪ.plaɪ/", "v:곱하다"], ["mum", "/mʌm/", "n:엄마"], ["murder", "/ˈmɜː.dər/", "n:살인"], ["muscle", "/ˈmʌs.əl/", "n:근육"],
+            ["museum", "/mjuːˈziː.əm/", "n:박물관"], ["music", "/ˈmjuː.zɪk/", "n:음악"], ["musical", "/ˈmjuː.zɪ.kəl/", "adj:음악의"], ["musician", "/mjuːˈzɪʃ.ən/", "n:음악가"], ["must", "/mʌst/", "v:해야 한다"],
+            ["my", "/maɪ/", "det:나의"], ["myself", "/maɪˈself/", "pron:나 자신"], ["mysterious", "/mɪˈstɪə.ri.əs/", "adj:신비한"], ["mystery", "/ˈmɪs.tər.i/", "n:미스터리"], ["nail", "/neɪl/", "n:손톱"],
+            ["naked", "/ˈneɪ.kɪd/", "adj:벌거벗은"], ["name", "/neɪm/", "n:이름"], ["narrow", "/ˈnær.əʊ/", "adj:좁은"], ["nation", "/ˈneɪ.ʃən/", "n:국가"], ["national", "/ˈnæʃ.ən.əl/", "adj:국가의"],
+            ["native", "/ˈneɪ.tɪv/", "adj:토착의"], ["natural", "/ˈnætʃ.ər.əl/", "adj:자연의"], ["naturally", "/ˈnætʃ.ər.əl.i/", "adv:자연스럽게"], ["nature", "/ˈneɪ.tʃər/", "n:자연"], ["navy", "/ˈneɪ.vi/", "n:해군"],
+            ["near", "/nɪər/", "prep:가까이"], ["nearby", "/ˌnɪəˈbaɪ/", "adj:인근의"], ["nearly", "/ˈnɪə.li/", "adv:거의"], ["neat", "/niːt/", "adj:깔끔한"], ["necessarily", "/ˈnes.ə.ser.ɪl.i/", "adv:반드시"],
+            ["necessary", "/ˈnes.ə.ser.i/", "adj:필요한"], ["neck", "/nek/", "n:목"], ["need", "/niːd/", "v:필요하다"], ["needle", "/ˈniː.dəl/", "n:바늘"], ["negative", "/ˈneɡ.ə.tɪv/", "adj:부정적인"],
+            ["neighbour", "/ˈneɪ.bər/", "n:이웃"], ["neighbourhood", "/ˈneɪ.bə.hʊd/", "n:이웃"], ["neither", "/ˈnaɪ.ðər/", "det:어느 쪽도 아니다"], ["nerve", "/nɜːv/", "n:신경"], ["nervous", "/ˈnɜː.vəs/", "adj:불안한"],
+            ["net", "/net/", "n:그물"], ["network", "/ˈnet.wɜːk/", "n:네트워크"], ["never", "/ˈnev.ər/", "adv:결코"], ["nevertheless", "/ˌnev.ə.ðəˈles/", "adv:그럼에도 불구하고"], ["new", "/njuː/", "adj:새로운"],
+            ["newly", "/ˈnjuː.li/", "adv:새로"], ["news", "/njuːz/", "n:뉴스"], ["newspaper", "/ˈnjuːzˌpeɪ.pər/", "n:신문"], ["next", "/nekst/", "adj:다음의"], ["nice", "/naɪs/", "adj:좋은"],
+            ["night", "/naɪt/", "n:밤"], ["nine", "/naɪn/", "num:9"], ["nineteen", "/ˌnaɪnˈtiːn/", "num:19"], ["ninety", "/ˈnaɪn.ti/", "num:90"], ["no", "/nəʊ/", "det:아니오"],
+            ["nobody", "/ˈnəʊ.bəd.i/", "pron:아무도"], ["noise", "/nɔɪz/", "n:소음"], ["noisy", "/ˈnɔɪ.zi/", "adj:시끄러운"], ["none", "/nʌn/", "pron:아무도"], ["nonsense", "/ˈnɒn.səns/", "n:허튼소리"],
+            ["nor", "/nɔːr/", "conj:도 아니다"], ["normal", "/ˈnɔː.məl/", "adj:정상적인"], ["normally", "/ˈnɔː.mə.li/", "adv:보통"], ["north", "/nɔːθ/", "n:북쪽"], ["northern", "/ˈnɔː.ðən/", "adj:북쪽의"],
+            ["nose", "/nəʊz/", "n:코"], ["not", "/nɒt/", "adv:아니다"], ["note", "/nəʊt/", "n:메모"], ["nothing", "/ˈnʌθ.ɪŋ/", "pron:아무것도"], ["notice", "/ˈnəʊ.tɪs/", "n:주목"],
+            ["noticeable", "/ˈnəʊ.tɪ.sə.bəl/", "adj:눈에 띄는"], ["notion", "/ˈnəʊ.ʃən/", "n:개념"], ["novel", "/ˈnɒv.əl/", "n:소설"], ["november", "/nəʊˈvem.bər/", "n:11월"], ["now", "/naʊ/", "adv:지금"],
+            ["nowhere", "/ˈnəʊ.weər/", "adv:아무데도"], ["nuclear", "/ˈnjuː.klɪər/", "adj:핵의"], ["number", "/ˈnʌm.bər/", "n:숫자"], ["numerous", "/ˈnjuː.mə.rəs/", "adj:수많은"], ["nurse", "/nɜːs/", "n:간호사"],
+            ["nut", "/nʌt/", "n:견과"], ["obey", "/əˈbeɪ/", "v:복종하다"], ["object", "/ˈɒb.dʒɪkt/", "n:물체"], ["objective", "/əbˈdʒek.tɪv/", "n:목표"], ["obligation", "/ˌɒb.lɪˈɡeɪ.ʃən/", "n:의무"],
+            ["observation", "/ˌɒb.zəˈveɪ.ʃən/", "n:관찰"], ["observe", "/əbˈzɜːv/", "v:관찰하다"], ["obtain", "/əbˈteɪn/", "v:얻다"], ["obvious", "/ˈɒb.vi.əs/", "adj:명백한"], ["obviously", "/ˈɒb.vi.əs.li/", "adv:명백히"],
+            ["occasion", "/əˈkeɪ.ʒən/", "n:경우"], ["occasional", "/əˈkeɪ.ʒən.əl/", "adj:가끔의"], ["occasionally", "/əˈkeɪ.ʒən.əl.i/", "adv:가끔"], ["occupation", "/ˌɒk.jəˈpeɪ.ʃən/", "n:직업"], ["occupy", "/ˈɒk.jə.paɪ/", "v:차지하다"],
+            ["occur", "/əˈkɜːr/", "v:일어난다"], ["ocean", "/ˈəʊ.ʃən/", "n:대양"], ["o'clock", "/əˈklɒk/", "adv:정각"], ["october", "/ɒkˈtəʊ.bər/", "n:10월"], ["odd", "/ɒd/", "adj:이상한"],
+            ["odds", "/ɒdz/", "n:가능성"], ["of", "/ɒv/", "prep:의"], ["off", "/ɒf/", "prep:떨어져"], ["offence", "/əˈfens/", "n:범죄"], ["offend", "/əˈfend/", "v:기분 상하게 하다"],
+            ["offensive", "/əˈfen.sɪv/", "adj:모욕적인"], ["offer", "/ˈɒf.ər/", "v:제안하다"], ["office", "/ˈɒf.ɪs/", "n:사무실"], ["officer", "/ˈɒf.ɪ.sər/", "n:장교"], ["official", "/əˈfɪʃ.əl/", "adj:공식적인"],
+            ["officially", "/əˈfɪʃ.əl.i/", "adv:공식적으로"], ["often", "/ˈɒf.ən/", "adv:종종"], ["oh", "/əʊ/", "int:오"], ["oil", "/ɔɪl/", "n:기름"], ["ok", "/ˌəʊˈkeɪ/", "adj:괜찮은"],
+            ["old", "/əʊld/", "adj:늙은"], ["on", "/ɒn/", "prep:위에"], ["once", "/wʌns/", "adv:한번"], ["one", "/wʌn/", "num:1"], ["onion", "/ˈʌn.jən/", "n:양파"],
+            ["only", "/ˈəʊn.li/", "adv:오직"], ["onto", "/ˈɒn.tuː/", "prep:위로"], ["open", "/ˈəʊ.pən/", "adj:열린"], ["opening", "/ˈəʊ.pən.ɪŋ/", "n:개막"], ["operate", "/ˈɒp.ər.eɪt/", "v:작동하다"],
+            ["operation", "/ˌɒp.ərˈeɪ.ʃən/", "n:수술"], ["operator", "/ˈɒp.ər.eɪ.tər/", "n:조작자"], ["opinion", "/əˈpɪn.jən/", "n:의견"], ["opponent", "/əˈpəʊ.nənt/", "n:상대"], ["opportunity", "/ˌɒp.əˈtjuː.nə.ti/", "n:기회"],
+            ["oppose", "/əˈpəʊz/", "v:반대하다"], ["opposed", "/əˈpəʊzd/", "adj:반대하는"], ["opposing", "/əˈpəʊ.zɪŋ/", "adj:서로 대립하는"], ["opposite", "/ˈɒp.ə.zɪt/", "adj:반대의"], ["opposition", "/ˌɒp.əˈzɪʃ.ən/", "n:반대"],
+            ["option", "/ˈɒp.ʃən/", "n:선택"], ["or", "/ɔːr/", "conj:또는"], ["orange", "/ˈɒr.ɪndʒ/", "n:오렌지"], ["order", "/ˈɔː.dər/", "n:주문"], ["ordinary", "/ˈɔː.dən.ri/", "adj:평범한"],
+            ["organ", "/ˈɔː.ɡən/", "n:장기"], ["organic", "/ɔːˈɡæn.ɪk/", "adj:유기농의"], ["organization", "/ˌɔː.ɡən.aɪˈzeɪ.ʃən/", "n:조직"], ["organize", "/ˈɔː.ɡən.aɪz/", "v:조직하다"], ["organized", "/ˈɔː.ɡən.aɪzd/", "adj:조직적인"],
+            ["origin", "/ˈɒr.ɪ.dʒɪn/", "n:기원"], ["original", "/əˈrɪdʒ.ən.əl/", "adj:원래의"], ["originally", "/əˈrɪdʒ.ən.əl.i/", "adv:원래"], ["other", "/ˈʌð.ər/", "det:다른"], ["otherwise", "/ˈʌð.ə.waɪz/", "adv:그렇지 않으면"],
+            ["ought", "/ɔːt/", "v:해야 한다"], ["ounce", "/aʊns/", "n:온스"], ["our", "/aʊər/", "det:우리의"], ["ours", "/aʊəz/", "pron:우리의 것"], ["ourselves", "/ˌaʊəˈselvz/", "pron:우리 자신"],
+            ["out", "/aʊt/", "adv:밖으로"], ["outcome", "/ˈaʊt.kʌm/", "n:결과"], ["outdoor", "/ˈaʊt.dɔːr/", "adj:야외의"], ["outdoors", "/ˌaʊtˈdɔːz/", "adv:야외에서"], ["outer", "/ˈaʊ.tər/", "adj:외부의"],
+            ["outlet", "/ˈaʊt.let/", "n:배출구"], ["outline", "/ˈaʊt.laɪn/", "n:개요"], ["output", "/ˈaʊt.pʊt/", "n:생산량"], ["outside", "/ˌaʊtˈsaɪd/", "prep:밖에"], ["outstanding", "/ˌaʊtˈstæn.dɪŋ/", "adj:뛰어난"],
+            ["oven", "/ˈʌv.ən/", "n:오븐"], ["over", "/ˈəʊ.vər/", "prep:위에"], ["overall", "/ˌəʊ.vəˈrɔːl/", "adj:전반적인"], ["overcome", "/ˌəʊ.vəˈkʌm/", "v:극복하다"], ["owe", "/əʊ/", "v:빚지다"],
+            ["own", "/əʊn/", "adj:자신의"], ["owner", "/ˈəʊ.nər/", "n:소유자"], ["pace", "/peɪs/", "n:속도"], ["pack", "/pæk/", "v:싸다"], ["package", "/ˈpæk.ɪdʒ/", "n:소포"],
+            ["packet", "/ˈpæk.ɪt/", "n:통"], ["page", "/peɪdʒ/", "n:페이지"], ["pain", "/peɪn/", "n:고통"], ["painful", "/ˈpeɪn.fəl/", "adj:고통스러운"], ["paint", "/peɪnt/", "v:그리다"],
+            ["painter", "/ˈpeɪn.tər/", "n:화가"], ["painting", "/ˈpeɪn.tɪŋ/", "n:그림"], ["pair", "/peər/", "n:쌍"], ["palace", "/ˈpæl.ɪs/", "n:궁전"], ["pale", "/peɪl/", "adj:창백한"],
+            ["pan", "/pæn/", "n:팬"], ["panel", "/ˈpæn.əl/", "n:패널"], ["panic", "/ˈpæn.ɪk/", "n:공황"], ["pants", "/pænts/", "n:바지"], ["paper", "/ˈpeɪ.pər/", "n:종이"],
+            ["parcel", "/ˈpɑː.səl/", "n:소포"], ["pardon", "/ˈpɑː.dən/", "n:용서"], ["parent", "/ˈpeə.rənt/", "n:부모"], ["park", "/pɑːk/", "n:공원"], ["parking", "/ˈpɑː.kɪŋ/", "n:주차"],
+            ["parliament", "/ˈpɑː.lɪ.mənt/", "n:의회"], ["part", "/pɑːt/", "n:부분"], ["participant", "/pɑːˈtɪs.ɪ.pənt/", "n:참가자"], ["participate", "/pɑːˈtɪs.ɪ.peɪt/", "v:참가하다"], ["particular", "/pəˈtɪk.jə.lər/", "adj:특정한"],
+            ["particularly", "/pəˈtɪk.jə.lə.li/", "adv:특히"], ["partly", "/ˈpɑːt.li/", "adv:부분적으로"], ["partner", "/ˈpɑːt.nər/", "n:파트너"], ["partnership", "/ˈpɑːt.nə.ʃɪp/", "n:동업"], ["party", "/ˈpɑː.ti/", "n:파티"],
+            ["pass", "/pɑːs/", "v:지나가다"], ["passage", "/ˈpæs.ɪdʒ/", "n:통로"], ["passenger", "/ˈpæs.ən.dʒər/", "n:승객"], ["passion", "/ˈpæʃ.ən/", "n:열정"], ["passport", "/ˈpɑːs.pɔːt/", "n:여권"],
+            ["past", "/pɑːst/", "n:과거"], ["path", "/pɑːθ/", "n:길"], ["patience", "/ˈpeɪ.ʃəns/", "n:인내"], ["patient", "/ˈpeɪ.ʃənt/", "n:환자"], ["pattern", "/ˈpæt.ən/", "n:패턴"],
+            ["pause", "/pɔːz/", "v:잠시 멈추다"], ["pay", "/peɪ/", "v:지불하다"], ["payment", "/ˈpeɪ.mənt/", "n:지불"], ["peace", "/piːs/", "n:평화"], ["peaceful", "/ˈpiːs.fəl/", "adj:평화로운"],
+            ["peak", "/piːk/", "n:절정"], ["pen", "/pen/", "n:펜"], ["penalty", "/ˈpen.əl.ti/", "n:처벌"], ["pencil", "/ˈpen.səl/", "n:연필"], ["penny", "/ˈpen.i/", "n:페니"],
+            ["pension", "/ˈpen.ʃən/", "n:연금"], ["people", "/ˈpiː.pəl/", "n:사람들"], ["pepper", "/ˈpep.ər/", "n:후추"], ["per", "/pɜːr/", "prep:당"], ["perceive", "/pəˈsiːv/", "v:인지하다"],
+            ["percentage", "/pəˈsen.tɪdʒ/", "n:백분율"], ["perception", "/pəˈsep.ʃən/", "n:지각"], ["perfect", "/ˈpɜː.fekt/", "adj:완벽한"], ["perfectly", "/ˈpɜː.fekt.li/", "adv:완벽하게"], ["perform", "/pəˈfɔːm/", "v:공연하다"],
+            ["performance", "/pəˈfɔː.məns/", "n:공연"], ["performer", "/pəˈfɔː.mər/", "n:공연자"], ["perhaps", "/pəˈhæps/", "adv:아마도"], ["period", "/ˈpɪə.ri.əd/", "n:기간"], ["permanent", "/ˈpɜː.mə.nənt/", "adj:영구적인"],
+            ["permission", "/pəˈmɪʃ.ən/", "n:허가"], ["permit", "/pəˈmɪt/", "v:허락하다"], ["person", "/ˈpɜː.sən/", "n:사람"], ["personal", "/ˈpɜː.sən.əl/", "adj:개인의"], ["personality", "/ˌpɜː.sənˈæl.ə.ti/", "n:성격"],
+            ["personally", "/ˈpɜː.sən.əl.i/", "adv:개인적으로"], ["personnel", "/ˌpɜː.sənˈel/", "n:인사과"], ["perspective", "/pəˈspek.tɪv/", "n:관점"], ["persuade", "/pəˈsweɪd/", "v:설득하다"], ["pet", "/pet/", "n:애완동물"],
+            ["petrol", "/ˈpet.rəl/", "n:휘발유"], ["phase", "/feɪz/", "n:단계"], ["philosophy", "/fɪˈlɒs.ə.fi/", "n:철학"], ["phone", "/fəʊn/", "n:전화"], ["photo", "/ˈfəʊ.təʊ/", "n:사진"],
+            ["photograph", "/ˈfəʊ.tə.ɡrɑːf/", "n:사진"], ["photographer", "/fəˈtɒɡ.rə.fər/", "n:사진작가"], ["photography", "/fəˈtɒɡ.rə.fi/", "n:사진 촬영"], ["phrase", "/freɪz/", "n:구절"], ["physical", "/ˈfɪz.ɪ.kəl/", "adj:신체의"],
+            ["physically", "/ˈfɪz.ɪ.kəl.i/", "adv:신체적으로"], ["physics", "/ˈfɪz.ɪks/", "n:물리학"], ["piano", "/piˈæn.əʊ/", "n:피아노"], ["pick", "/pɪk/", "v:고르다"], ["picture", "/ˈpɪk.tʃər/", "n:그림"],
+            ["pie", "/paɪ/", "n:파이"], ["piece", "/piːs/", "n:조각"], ["pig", "/pɪɡ/", "n:돼지"], ["pile", "/paɪl/", "n:더미"], ["pill", "/pɪl/", "n:알약"],
+            ["pilot", "/ˈpaɪ.lət/", "n:조종사"], ["pin", "/pɪn/", "n:핀"], ["pine", "/paɪn/", "n:소나무"], ["pink", "/pɪŋk/", "adj:분홍색의"], ["pint", "/paɪnt/", "n:파인트"],
+            ["pipe", "/paɪp/", "n:파이프"], ["pitch", "/pɪtʃ/", "n:경기장"], ["pity", "/ˈpɪt.i/", "n:동정"], ["place", "/pleɪs/", "n:장소"], ["plain", "/pleɪn/", "adj:평범한"],
+            ["plan", "/plæn/", "n:계획"], ["plane", "/pleɪn/", "n:비행기"], ["planet", "/ˈplæn.ɪt/", "n:행성"], ["planning", "/ˈplæn.ɪŋ/", "n:계획"], ["plant", "/plɑːnt/", "n:식물"],
+            ["plastic", "/ˈplæs.tɪk/", "n:플라스틱"], ["plate", "/pleɪt/", "n:접시"], ["platform", "/ˈplæt.fɔːm/", "n:플랫폼"], ["play", "/pleɪ/", "v:놀다"], ["player", "/ˈpleɪ.ər/", "n:선수"],
+            ["pleasant", "/ˈplez.ənt/", "adj:쾌적한"], ["please", "/pliːz/", "int:제발"], ["pleased", "/pliːzd/", "adj:기쁜"], ["pleasure", "/ˈpleʒ.ər/", "n:기쁨"], ["plenty", "/ˈplen.ti/", "n:풍부함"],
+            ["plot", "/plɒt/", "n:줄거리"], ["plug", "/plʌɡ/", "n:플러그"], ["plus", "/plʌs/", "prep:더하기"], ["pocket", "/ˈpɒk.ɪt/", "n:주머니"], ["poem", "/ˈpəʊ.ɪm/", "n:시"],
+            ["poet", "/ˈpəʊ.ɪt/", "n:시인"], ["poetry", "/ˈpəʊ.ɪ.tri/", "n:시"], ["point", "/pɔɪnt/", "n:점"], ["pointed", "/ˈpɔɪn.tɪd/", "adj:뾰족한"], ["poison", "/ˈpɔɪ.zən/", "n:독"],
+            ["poisonous", "/ˈpɔɪ.zən.əs/", "adj:유독한"], ["pole", "/pəʊl/", "n:막대기"], ["police", "/pəˈliːs/", "n:경찰"], ["policy", "/ˈpɒl.ə.si/", "n:정책"], ["polish", "/ˈpɒl.ɪʃ/", "v:닦다"],
+            ["polite", "/pəˈlaɪt/", "adj:공손한"], ["political", "/pəˈlɪt.ɪ.kəl/", "adj:정치적인"], ["politician", "/ˌpɒl.ɪˈtɪʃ.ən/", "n:정치인"], ["politics", "/ˈpɒl.ə.tɪks/", "n:정치"], ["pollution", "/pəˈluː.ʃən/", "n:오염"],
+            ["pool", "/puːl/", "n:수영장"], ["poor", "/pɔːr/", "adj:가난한"], ["pop", "/pɒp/", "n:팝 음악"], ["popular", "/ˈpɒp.jə.lər/", "adj:인기 있는"], ["popularity", "/ˌpɒp.jəˈlær.ə.ti/", "n:인기"],
+            ["population", "/ˌpɒp.jəˈleɪ.ʃən/", "n:인구"], ["port", "/pɔːt/", "n:항구"], ["pose", "/pəʊz/", "v:제기하다"], ["position", "/pəˈzɪʃ.ən/", "n:위치"], ["positive", "/ˈpɒz.ə.tɪv/", "adj:긍정적인"],
+            ["possess", "/pəˈzes/", "v:소유하다"], ["possession", "/pəˈzeʃ.ən/", "n:소유"], ["possibility", "/ˌpɒs.əˈbɪl.ə.ti/", "n:가능성"], ["possible", "/ˈpɒs.ə.bəl/", "adj:가능한"], ["possibly", "/ˈpɒs.ə.bli/", "adv:아마도"],
+            ["post", "/pəʊst/", "n:우편"], ["poster", "/ˈpəʊ.stər/", "n:포스터"], ["pot", "/pɒt/", "n:냄비"], ["potato", "/pəˈteɪ.təʊ/", "n:감자"], ["pound", "/paʊnd/", "n:파운드"],
+            ["pour", "/pɔːr/", "v:붓다"], ["poverty", "/ˈpɒv.ə.ti/", "n:가난"], ["powder", "/ˈpaʊ.dər/", "n:가루"], ["power", "/paʊər/", "n:힘"], ["powerful", "/ˈpaʊə.fəl/", "adj:강력한"],
+            ["practical", "/ˈpræk.tɪ.kəl/", "adj:실용적인"], ["practically", "/ˈpræk.tɪ.kəl.i/", "adv:사실상"], ["practice", "/ˈpræk.tɪs/", "n:연습"], ["practise", "/ˈpræk.tɪs/", "v:연습하다"], ["praise", "/preɪz/", "v:칭찬하다"],
+            ["pray", "/preɪ/", "v:기도하다"], ["prayer", "/preər/", "n:기도"], ["precise", "/prɪˈsaɪs/", "adj:정확한"], ["precisely", "/prɪˈsaɪs.li/", "adv:정확히"], ["predict", "/prɪˈdɪkt/", "v:예측하다"],
+            ["prediction", "/prɪˈdɪk.ʃən/", "n:예측"], ["prefer", "/prɪˈfɜːr/", "v:선호하다"], ["preference", "/ˈpref.ər.əns/", "n:선호"], ["pregnant", "/ˈpreɡ.nənt/", "adj:임신한"], ["premise", "/ˈprem.ɪs/", "n:전제"],
+            ["preparation", "/ˌprep.ərˈeɪ.ʃən/", "n:준비"], ["prepare", "/prɪˈpeər/", "v:준비하다"], ["prepared", "/prɪˈpeəd/", "adj:준비된"], ["presence", "/ˈprez.əns/", "n:존재"], ["present", "/ˈprez.ənt/", "n:선물"],
+            ["presentation", "/ˌprez.ənˈteɪ.ʃən/", "n:발표"], ["preserve", "/prɪˈzɜːv/", "v:보존하다"], ["president", "/ˈprez.ɪ.dənt/", "n:대통령"], ["press", "/pres/", "v:누르다"], ["pressure", "/ˈpreʃ.ər/", "n:압력"],
+            ["presumably", "/prɪˈzjuː.mə.bli/", "adv:아마도"], ["pretend", "/prɪˈtend/", "v:인 척하다"], ["pretty", "/ˈprɪt.i/", "adj:예쁜"], ["prevent", "/prɪˈvent/", "v:막다"], ["previous", "/ˈpriː.vi.əs/", "adj:이전의"],
+            ["previously", "/ˈpriː.vi.əs.li/", "adv:이전에"], ["price", "/praɪs/", "n:가격"], ["pride", "/praɪd/", "n:자부심"], ["priest", "/priːst/", "n:신부"], ["primary", "/ˈpraɪ.mər.i/", "adj:주요한"],
+            ["prime", "/praɪm/", "adj:주요한"], ["prince", "/prɪns/", "n:왕자"], ["princess", "/prɪnˈses/", "n:공주"], ["principal", "/ˈprɪn.sə.pəl/", "n:교장"], ["principle", "/ˈprɪn.sə.pəl/", "n:원칙"],
+            ["print", "/prɪnt/", "v:인쇄하다"], ["printer", "/ˈprɪn.tər/", "n:프린터"], ["printing", "/ˈprɪn.tɪŋ/", "n:인쇄"], ["priority", "/praɪˈɒr.ə.ti/", "n:우선순위"], ["prison", "/ˈprɪz.ən/", "n:감옥"],
+            ["prisoner", "/ˈprɪz.ən.ər/", "n:죄수"], ["privacy", "/ˈprɪv.ə.si/", "n:사생활"], ["private", "/ˈpraɪ.vət/", "adj:사적인"], ["prize", "/praɪz/", "n:상"], ["probable", "/ˈprɒb.ə.bəl/", "adj:있음직한"],
+            ["probably", "/ˈprɒb.ə.bli/", "adv:아마도"], ["problem", "/ˈprɒb.ləm/", "n:문제"], ["procedure", "/prəˈsiː.dʒər/", "n:절차"], ["proceed", "/prəˈsiːd/", "v:진행하다"], ["process", "/ˈprəʊ.ses/", "n:과정"],
+            ["produce", "/prəˈdjuːs/", "v:생산하다"], ["producer", "/prəˈdjuː.sər/", "n:생산자"], ["product", "/ˈprɒd.ʌkt/", "n:제품"], ["production", "/prəˈdʌk.ʃən/", "n:생산"], ["profession", "/prəˈfeʃ.ən/", "n:직업"],
+            ["professional", "/prəˈfeʃ.ən.əl/", "adj:전문적인"], ["professor", "/prəˈfes.ər/", "n:교수"], ["profile", "/ˈprəʊ.faɪl/", "n:프로필"], ["profit", "/ˈprɒf.ɪt/", "n:이익"], ["program", "/ˈprəʊ.ɡræm/", "n:프로그램"],
+            ["programme", "/ˈprəʊ.ɡræm/", "n:프로그램"], ["progress", "/ˈprəʊ.ɡres/", "n:진전"], ["project", "/ˈprɒdʒ.ekt/", "n:프로젝트"], ["promise", "/ˈprɒm.ɪs/", "v:약속하다"], ["promote", "/prəˈməʊt/", "v:홍보하다"],
+            ["promotion", "/prəˈməʊ.ʃən/", "n:승진"], ["prompt", "/prɒmpt/", "adj:신속한"], ["promptly", "/ˈprɒmpt.li/", "adv:지체 없이"], ["pronounce", "/prəˈnaʊns/", "v:발음하다"], ["pronunciation", "/prəˌnʌn.siˈeɪ.ʃən/", "n:발음"],
+            ["proof", "/pruːf/", "n:증거"], ["proper", "/ˈprɒp.ər/", "adj:적절한"], ["properly", "/ˈprɒp.əl.i/", "adv:제대로"], ["property", "/ˈprɒp.ə.ti/", "n:재산"], ["proportion", "/prəˈpɔː.ʃən/", "n:비율"],
+            ["proposal", "/prəˈpəʊ.zəl/", "n:제안"], ["propose", "/prəˈpəʊz/", "v:제안하다"], ["prospect", "/ˈprɒs.pekt/", "n:전망"], ["protect", "/prəˈtekt/", "v:보호하다"], ["protection", "/prəˈtek.ʃən/", "n:보호"],
+            ["protest", "/ˈprəʊ.test/", "n:항의"], ["proud", "/praʊd/", "adj:자랑스러운"], ["prove", "/pruːv/", "v:증명하다"], ["provide", "/prəˈvaɪd/", "v:제공하다"], ["provided", "/prəˈvaɪ.dɪd/", "conj:만약"],
+            ["provider", "/prəˈvaɪ.dər/", "n:제공자"], ["province", "/ˈprɒv.ɪns/", "n:지방"], ["provision", "/prəˈvɪʒ.ən/", "n:제공"], ["psychological", "/ˌsaɪ.kəlˈɒdʒ.ɪ.kəl/", "adj:심리적인"], ["psychology", "/saɪˈkɒl.ə.dʒi/", "n:심리학"],
+            ["pub", "/pʌb/", "n:술집"], ["public", "/ˈpʌb.lɪk/", "adj:공공의"], ["publication", "/ˌpʌb.lɪˈkeɪ.ʃən/", "n:출판"], ["publicity", "/pʌbˈlɪs.ə.ti/", "n:홍보"], ["publish", "/ˈpʌb.lɪʃ/", "v:출판하다"],
+            ["publisher", "/ˈpʌb.lɪ.ʃər/", "n:출판사"], ["pudding", "/ˈpʊd.ɪŋ/", "n:푸딩"], ["pull", "/pʊl/", "v:당기다"], ["pump", "/pʌmp/", "n:펌프"], ["punch", "/pʌntʃ/", "v:치다"],
+            ["punish", "/ˈpʌn.ɪʃ/", "v:처벌하다"], ["punishment", "/ˈpʌn.ɪʃ.mənt/", "n:처벌"], ["pupil", "/ˈpjuː.pəl/", "n:학생"], ["purchase", "/ˈpɜː.tʃəs/", "v:구매하다"], ["pure", "/pjʊər/", "adj:순수한"],
+            ["purely", "/ˈpjʊə.li/", "adv:순전히"], ["purple", "/ˈpɜː.pəl/", "adj:보라색의"], ["purpose", "/ˈpɜː.pəs/", "n:목적"], ["pursue", "/pəˈsjuː/", "v:추구하다"], ["push", "/pʊʃ/", "v:밀다"],
+            ["put", "/pʊt/", "v:놓다"], ["qualification", "/ˌkwɒl.ɪ.fɪˈkeɪ.ʃən/", "n:자격"], ["qualified", "/ˈkwɒl.ɪ.faɪd/", "adj:자격이 있는"], ["qualify", "/ˈkwɒl.ɪ.faɪ/", "v:자격을 얻다"], ["quality", "/ˈkwɒl.ə.ti/", "n:품질"],
+            ["quantity", "/ˈkwɒn.tə.ti/", "n:양"], ["quarter", "/ˈkwɔː.tər/", "n:4분의 1"], ["queen", "/kwiːn/", "n:여왕"], ["question", "/ˈkwes.tʃən/", "n:질문"], ["queue", "/kjuː/", "n:줄"],
+            ["quick", "/kwɪk/", "adj:빠른"], ["quickly", "/ˈkwɪk.li/", "adv:빨리"], ["quiet", "/ˈkwaɪ.ət/", "adj:조용한"], ["quietly", "/ˈkwaɪ.ət.li/", "adv:조용히"], ["quit", "/kwɪt/", "v:그만두다"],
+            ["quite", "/kwaɪt/", "adv:꽤"], ["quote", "/kwəʊt/", "v:인용하다"], ["race", "/reɪs/", "n:경주"], ["racing", "/ˈreɪ.sɪŋ/", "n:경주"], ["radar", "/ˈreɪ.dɑːr/", "n:레이더"],
+            ["radio", "/ˈreɪ.di.əʊ/", "n:라디오"], ["rail", "/reɪl/", "n:철도"], ["railway", "/ˈreɪl.weɪ/", "n:철도"], ["rain", "/reɪn/", "n:비"], ["raise", "/reɪz/", "v:올리다"],
+            ["range", "/reɪndʒ/", "n:범위"], ["rank", "/ræŋk/", "n:순위"], ["rapid", "/ˈræp.ɪd/", "adj:빠른"], ["rapidly", "/ˈræp.ɪd.li/", "adv:빠르게"], ["rare", "/reər/", "adj:드문"],
+            ["rarely", "/ˈreə.li/", "adv:드물게"], ["rate", "/reɪt/", "n:비율"], ["rather", "/ˈrɑː.ðər/", "adv:오히려"], ["rating", "/ˈreɪ.tɪŋ/", "n:평가"], ["ratio", "/ˈreɪ.ʃi.əʊ/", "n:비율"],
+            ["raw", "/rɔː/", "adj:날것의"], ["reach", "/riːtʃ/", "v:도달하다"], ["react", "/riˈækt/", "v:반응하다"], ["reaction", "/riˈæk.ʃən/", "n:반응"], ["read", "/riːd/", "v:읽다"],
+            ["reader", "/ˈriː.dər/", "n:독자"], ["reading", "/ˈriː.dɪŋ/", "n:독서"], ["ready", "/ˈred.i/", "adj:준비된"], ["real", "/rɪəl/", "adj:진짜의"], ["realistic", "/ˌrɪəˈlɪs.tɪk/", "adj:현실적인"],
+            ["reality", "/riˈæl.ə.ti/", "n:현실"], ["realize", "/ˈrɪə.laɪz/", "v:깨닫다"], ["really", "/ˈrɪə.li/", "adv:정말로"], ["rear", "/rɪər/", "n:뒤쪽"], ["reason", "/ˈriː.zən/", "n:이유"],
+            ["reasonable", "/ˈriː.zən.ə.bəl/", "adj:합리적인"], ["reasonably", "/ˈriː.zən.ə.bli/", "adv:합리적으로"], ["recall", "/rɪˈkɔːl/", "v:기억해내다"], ["receipt", "/rɪˈsiːt/", "n:영수증"], ["receive", "/rɪˈsiːv/", "v:받다"],
+            ["recent", "/ˈriː.sənt/", "adj:최근의"], ["recently", "/ˈriː.sənt.li/", "adv:최근에"], ["reception", "/rɪˈsep.ʃən/", "n:접수처"], ["reckon", "/ˈrek.ən/", "v:생각하다"], ["recognition", "/ˌrek.əɡˈnɪʃ.ən/", "n:인식"],
+            ["recognize", "/ˈrek.əɡ.naɪz/", "v:인식하다"], ["recommend", "/ˌrek.əˈmend/", "v:추천하다"], ["recommendation", "/ˌrek.ə.menˈdeɪ.ʃən/", "n:추천"], ["record", "/rɪˈkɔːd/", "n:기록"], ["recording", "/rɪˈkɔː.dɪŋ/", "n:녹음"],
+            ["recover", "/rɪˈkʌv.ər/", "v:회복하다"], ["recovery", "/rɪˈkʌv.ər.i/", "n:회복"], ["red", "/red/", "adj:빨간"], ["reduce", "/rɪˈdjuːs/", "v:줄이다"], ["reduction", "/rɪˈdʌk.ʃən/", "n:감소"],
+            ["refer", "/rɪˈfɜːr/", "v:언급하다"], ["reference", "/ˈref.ər.əns/", "n:참조"], ["reflect", "/rɪˈflekt/", "v:반영하다"], ["reflection", "/rɪˈflek.ʃən/", "n:반사"], ["reform", "/rɪˈfɔːm/", "v:개혁하다"],
+            ["refrigerator", "/rɪˈfrɪdʒ.ər.eɪ.tər/", "n:냉장고"], ["refuse", "/rɪˈfjuːz/", "v:거절하다"], ["regard", "/rɪˈɡɑːd/", "v:여기다"], ["region", "/ˈriː.dʒən/", "n:지역"], ["regional", "/ˈriː.dʒən.əl/", "adj:지역의"],
+            ["register", "/ˈredʒ.ɪ.stər/", "v:등록하다"], ["registration", "/ˌredʒ.ɪˈstreɪ.ʃən/", "n:등록"], ["regret", "/rɪˈɡret/", "v:후회하다"], ["regular", "/ˈreɡ.jə.lər/", "adj:규칙적인"], ["regularly", "/ˈreɡ.jə.lə.li/", "adv:규칙적으로"],
+            ["regulation", "/ˌreɡ.jəˈleɪ.ʃən/", "n:규정"], ["reject", "/rɪˈdʒekt/", "v:거부하다"], ["relate", "/rɪˈleɪt/", "v:관련시키다"], ["related", "/rɪˈleɪ.tɪd/", "adj:관련된"], ["relation", "/rɪˈleɪ.ʃən/", "n:관계"],
+            ["relationship", "/rɪˈleɪ.ʃən.ʃɪp/", "n:관계"], ["relative", "/ˈrel.ə.tɪv/", "adj:상대적인"], ["relatively", "/ˈrel.ə.tɪv.li/", "adv:비교적"], ["relax", "/rɪˈlæks/", "v:쉬다"], ["relaxed", "/rɪˈlækst/", "adj:편안한"],
+            ["relaxing", "/rɪˈlæk.sɪŋ/", "adj:편안한"], ["release", "/rɪˈliːs/", "v:풀어주다"], ["relevant", "/ˈrel.ə.vənt/", "adj:관련된"], ["relief", "/rɪˈliːf/", "n:안도"], ["relieve", "/rɪˈliːv/", "v:완화하다"],
+            ["religion", "/rɪˈlɪdʒ.ən/", "n:종교"], ["religious", "/rɪˈlɪdʒ.əs/", "adj:종교적인"], ["rely", "/rɪˈlaɪ/", "v:의지하다"], ["remain", "/rɪˈmeɪn/", "v:남다"], ["remark", "/rɪˈmɑːk/", "n:발언"],
+            ["remarkable", "/rɪˈmɑː.kə.bəl/", "adj:놀라운"], ["remember", "/rɪˈmem.bər/", "v:기억하다"], ["remind", "/rɪˈmaɪnd/", "v:상기시키다"], ["remote", "/rɪˈməʊt/", "adj:먼"], ["removal", "/rɪˈmuː.vəl/", "n:제거"],
+            ["remove", "/rɪˈmuːv/", "v:제거하다"], ["rent", "/rent/", "v:임대하다"], ["repair", "/rɪˈpeər/", "v:수리하다"], ["repeat", "/rɪˈpiːt/", "v:반복하다"], ["repeated", "/rɪˈpiː.tɪd/", "adj:반복되는"],
+            ["replace", "/rɪˈpleɪs/", "v:대체하다"], ["reply", "/rɪˈplaɪ/", "v:대답하다"], ["report", "/rɪˈpɔːt/", "n:보고서"], ["reporter", "/rɪˈpɔː.tər/", "n:기자"], ["represent", "/ˌrep.rɪˈzent/", "v:대표하다"],
+            ["representation", "/ˌrep.rɪ.zenˈteɪ.ʃən/", "n:대표"], ["representative", "/ˌrep.rɪˈzen.tə.tɪv/", "n:대표자"], ["republic", "/rɪˈpʌb.lɪk/", "n:공화국"], ["reputation", "/ˌrep.jəˈteɪ.ʃən/", "n:평판"], ["request", "/rɪˈkwest/", "n:요청"],
+            ["require", "/rɪˈkwaɪər/", "v:요구하다"], ["requirement", "/rɪˈkwaɪə.mənt/", "n:요구조건"], ["rescue", "/ˈres.kjuː/", "v:구조하다"], ["research", "/rɪˈsɜːtʃ/", "n:연구"], ["researcher", "/rɪˈsɜː.tʃər/", "n:연구원"],
+            ["reservation", "/ˌrez.əˈveɪ.ʃən/", "n:예약"], ["reserve", "/rɪˈzɜːv/", "v:예약하다"], ["resident", "/ˈrez.ɪ.dənt/", "n:거주자"], ["resist", "/rɪˈzɪst/", "v:저항하다"], ["resistance", "/rɪˈzɪs.təns/", "n:저항"],
+            ["resolution", "/ˌrez.əˈluː.ʃən/", "n:해결"], ["resolve", "/rɪˈzɒlv/", "v:해결하다"], ["resort", "/rɪˈzɔːt/", "n:휴양지"], ["resource", "/rɪˈzɔːs/", "n:자원"], ["respect", "/rɪˈspekt/", "n:존경"],
+            ["respond", "/rɪˈspɒnd/", "v:응답하다"], ["response", "/rɪˈspɒns/", "n:응답"], ["responsibility", "/rɪˌspɒn.sɪˈbɪl.ə.ti/", "n:책임"], ["responsible", "/rɪˈspɒn.sə.bəl/", "adj:책임이 있는"], ["rest", "/rest/", "n:휴식"],
+            ["restaurant", "/ˈres.trɒnt/", "n:식당"], ["restore", "/rɪˈstɔːr/", "v:복구하다"], ["restrict", "/rɪˈstrɪkt/", "v:제한하다"], ["restriction", "/rɪˈstrɪk.ʃən/", "n:제한"], ["result", "/rɪˈzʌlt/", "n:결과"],
+            ["retain", "/rɪˈteɪn/", "v:보유하다"], ["retire", "/rɪˈtaɪər/", "v:은퇴하다"], ["retired", "/rɪˈtaɪəd/", "adj:은퇴한"], ["retirement", "/rɪˈtaɪə.mənt/", "n:은퇴"], ["return", "/rɪˈtɜːn/", "v:돌아오다"],
+            ["reveal", "/rɪˈviːl/", "v:드러내다"], ["reverse", "/rɪˈvɜːs/", "v:뒤집다"], ["review", "/rɪˈvjuː/", "n:검토"], ["revise", "/rɪˈvaɪz/", "v:수정하다"], ["revision", "/rɪˈvɪʒ.ən/", "n:수정"],
+            ["revolution", "/ˌrev.əˈluː.ʃən/", "n:혁명"], ["reward", "/rɪˈwɔːd/", "n:보상"], ["rhythm", "/ˈrɪð.əm/", "n:리듬"], ["rice", "/raɪs/", "n:쌀"], ["rich", "/rɪtʃ/", "adj:부유한"],
+            ["rid", "/rɪd/", "v:제거하다"], ["ride", "/raɪd/", "v:타다"], ["rider", "/ˈraɪ.dər/", "n:타는 사람"], ["ridiculous", "/rɪˈdɪk.jə.ləs/", "adj:터무니없는"], ["riding", "/ˈraɪ.dɪŋ/", "n:승마"],
+            ["right", "/raɪt/", "adj:옳은"], ["ring", "/rɪŋ/", "n:반지"], ["rise", "/raɪz/", "v:오르다"], ["risk", "/rɪsk/", "n:위험"], ["rival", "/ˈraɪ.vəl/", "n:경쟁자"],
+            ["river", "/ˈrɪv.ər/", "n:강"], ["road", "/rəʊd/", "n:길"], ["rob", "/rɒb/", "v:강탈하다"], ["rock", "/rɒk/", "n:바위"], ["role", "/rəʊl/", "n:역할"],
+            ["roll", "/rəʊl/", "v:구르다"], ["romantic", "/rəʊˈmæn.tɪk/", "adj:로맨틱한"], ["roof", "/ruːf/", "n:지붕"], ["room", "/ruːm/", "n:방"], ["root", "/ruːt/", "n:뿌리"],
+            ["rope", "/rəʊp/", "n:밧줄"], ["rough", "/rʌf/", "adj:거친"], ["roughly", "/ˈrʌf.li/", "adv:대략"], ["round", "/raʊnd/", "adj:둥근"], ["route", "/ruːt/", "n:경로"],
+            ["routine", "/ruːˈtiːn/", "n:일상"], ["row", "/rəʊ/", "n:열"], ["royal", "/ˈrɔɪ.əl/", "adj:왕실의"], ["rub", "/rʌb/", "v:문지르다"], ["rubber", "/ˈrʌb.ər/", "n:고무"],
+            ["rubbish", "/ˈrʌb.ɪʃ/", "n:쓰레기"], ["rude", "/ruːd/", "adj:무례한"], ["rug", "/rʌɡ/", "n:양탄자"], ["ruin", "/ˈruː.ɪn/", "v:망치다"], ["rule", "/ruːl/", "n:규칙"],
+            ["ruler", "/ˈruː.lər/", "n:통치자"], ["rumour", "/ˈruː.mər/", "n:소문"], ["run", "/rʌn/", "v:달리다"], ["runner", "/ˈrʌn.ər/", "n:주자"], ["running", "/ˈrʌn.ɪŋ/", "n:달리기"],
+            ["rural", "/ˈrʊə.rəl/", "adj:시골의"], ["rush", "/rʌʃ/", "v:서두르다"], ["sack", "/sæk/", "n:자루"], ["sad", "/sæd/", "adj:슬픈"], ["sadly", "/ˈsæd.li/", "adv:슬프게도"],
+            ["safe", "/seɪf/", "adj:안전한"], ["safety", "/ˈseɪf.ti/", "n:안전"], ["sail", "/seɪl/", "v:항해하다"], ["sailing", "/ˈseɪ.lɪŋ/", "n:항해"], ["sailor", "/ˈseɪ.lər/", "n:선원"],
+            ["salad", "/ˈsæl.əd/", "n:샐러드"], ["salary", "/ˈsæl.ər.i/", "n:급여"], ["sale", "/seɪl/", "n:판매"], ["salt", "/sɒlt/", "n:소금"], ["salty", "/ˈsɒl.ti/", "adj:짠"],
+            ["same", "/seɪm/", "adj:같은"], ["sample", "/ˈsɑːm.pəl/", "n:샘플"], ["sand", "/sænd/", "n:모래"], ["sandwich", "/ˈsæn.wɪdʒ/", "n:샌드위치"], ["satisfaction", "/ˌsæt.ɪsˈfæk.ʃən/", "n:만족"],
+            ["satisfied", "/ˈsæt.ɪs.faɪd/", "adj:만족한"], ["satisfy", "/ˈsæt.ɪs.faɪ/", "v:만족시키다"], ["satisfying", "/ˈsæt.ɪs.faɪ.ɪŋ/", "adj:만족스러운"], ["sauce", "/sɔːs/", "n:소스"], ["sausage", "/ˈsɒs.ɪdʒ/", "n:소시지"],
+            ["save", "/seɪv/", "v:구하다"], ["saving", "/ˈseɪ.vɪŋ/", "n:절약"], ["say", "/seɪ/", "v:말하다"], ["scale", "/skeɪl/", "n:규모"], ["scare", "/skeər/", "v:겁주다"],
+            ["scared", "/skeəd/", "adj:겁먹은"], ["scary", "/ˈskeə.ri/", "adj:무서운"], ["scene", "/siːn/", "n:장면"], ["schedule", "/ˈʃed.juːl/", "n:일정"], ["scheme", "/skiːm/", "n:계획"],
+            ["school", "/skuːl/", "n:학교"], ["science", "/ˈsaɪ.əns/", "n:과학"], ["scientific", "/ˌsaɪənˈtɪf.ɪk/", "adj:과학적인"], ["scientist", "/ˈsaɪən.tɪst/", "n:과학자"], ["scissors", "/ˈsɪz.əz/", "n:가위"],
+            ["score", "/skɔːr/", "n:점수"], ["scratch", "/skrætʃ/", "v:긁다"], ["scream", "/skriːm/", "v:비명 지르다"], ["screen", "/skriːn/", "n:화면"], ["screw", "/skruː/", "n:나사"],
+            ["sea", "/siː/", "n:바다"], ["seal", "/siːl/", "n:바다표범"], ["search", "/sɜːtʃ/", "v:찾다"], ["season", "/ˈsiː.zən/", "n:계절"], ["seat", "/siːt/", "n:좌석"],
+            ["second", "/ˈsek.ənd/", "num:초"], ["secondary", "/ˈsek.ən.dri/", "adj:부차적인"], ["secret", "/ˈsiː.krət/", "n:비밀"], ["secretary", "/ˈsek.rə.tər.i/", "n:비서"], ["section", "/ˈsek.ʃən/", "n:구역"],
+            ["sector", "/ˈsek.tər/", "n:부문"], ["secure", "/sɪˈkjʊər/", "adj:안전한"], ["security", "/sɪˈkjʊə.rə.ti/", "n:보안"], ["see", "/siː/", "v:보다"], ["seed", "/siːd/", "n:씨앗"],
+            ["seek", "/siːk/", "v:찾다"], ["seem", "/siːm/", "v:보이다"], ["select", "/sɪˈlekt/", "v:선택하다"], ["selection", "/sɪˈlek.ʃən/", "n:선택"], ["self", "/self/", "n:자아"],
+            ["sell", "/sel/", "v:팔다"], ["senate", "/ˈsen.ət/", "n:상원"], ["senator", "/ˈsen.ə.tər/", "n:상원의원"], ["send", "/send/", "v:보내다"], ["senior", "/ˈsiː.ni.ər/", "adj:고위의"],
+            ["sense", "/sens/", "n:감각"], ["sensible", "/ˈsen.sə.bəl/", "adj:현명한"], ["sensitive", "/ˈsen.sɪ.tɪv/", "adj:민감한"], ["sentence", "/ˈsen.təns/", "n:문장"], ["separate", "/ˈsep.ər.ət/", "adj:분리된"],
+            ["separated", "/ˈsep.ər.eɪ.tɪd/", "adj:분리된"], ["separately", "/ˈsep.ər.ət.li/", "adv:따로"], ["separation", "/ˌsep.ərˈeɪ.ʃən/", "n:분리"], ["september", "/sepˈtem.bər/", "n:9월"], ["series", "/ˈsɪə.riːz/", "n:시리즈"],
+            ["serious", "/ˈsɪə.ri.əs/", "adj:심각한"], ["seriously", "/ˈsɪə.ri.əs.li/", "adv:심각하게"], ["servant", "/ˈsɜː.vənt/", "n:하인"], ["serve", "/sɜːv/", "v:제공하다"], ["service", "/ˈsɜː.vɪs/", "n:서비스"],
+            ["session", "/ˈseʃ.ən/", "n:회기"], ["set", "/set/", "v:설정하다"], ["settle", "/ˈset.əl/", "v:정착하다"], ["settlement", "/ˈset.əl.mənt/", "n:정착"], ["seven", "/ˈsev.ən/", "num:7"],
+            ["seventeen", "/ˌsev.ənˈtiːn/", "num:17"], ["seventy", "/ˈsev.ən.ti/", "num:70"], ["several", "/ˈsev.ər.əl/", "det:몇몇의"], ["severe", "/sɪˈvɪər/", "adj:심각한"], ["severely", "/sɪˈvɪə.li/", "adv:심하게"],
+            ["sew", "/səʊ/", "v:바느질하다"], ["sex", "/seks/", "n:성"], ["sexual", "/ˈsek.ʃu.əl/", "adj:성적인"], ["shade", "/ʃeɪd/", "n:그늘"], ["shadow", "/ˈʃæd.əʊ/", "n:그림자"],
+            ["shake", "/ʃeɪk/", "v:흔들다"], ["shall", "/ʃæl/", "v:할 것이다"], ["shallow", "/ˈʃæl.əʊ/", "adj:얕은"], ["shame", "/ʃeɪm/", "n:수치심"], ["shape", "/ʃeɪp/", "n:모양"],
+            ["shaped", "/ʃeɪpt/", "adj:모양의"], ["share", "/ʃeər/", "v:공유하다"], ["sharp", "/ʃɑːp/", "adj:날카로운"], ["sharply", "/ˈʃɑːp.li/", "adv:급격히"], ["shave", "/ʃeɪv/", "v:면도하다"],
+            ["she", "/ʃiː/", "pron:그녀는"], ["sheep", "/ʃiːp/", "n:양"], ["sheet", "/ʃiːt/", "n:시트"], ["shelf", "/ʃelf/", "n:선반"], ["shell", "/ʃel/", "n:껍질"],
+            ["shelter", "/ˈʃel.tər/", "n:피난처"], ["shift", "/ʃɪft/", "v:옮기다"], ["shine", "/ʃaɪn/", "v:빛나다"], ["shiny", "/ˈʃaɪ.ni/", "adj:반짝이는"], ["ship", "/ʃɪp/", "n:배"],
+            ["shirt", "/ʃɜːt/", "n:셔츠"], ["shock", "/ʃɒk/", "n:충격"], ["shocked", "/ʃɒkt/", "adj:충격받은"], ["shocking", "/ˈʃɒk.ɪŋ/", "adj:충격적인"], ["shoe", "/ʃuː/", "n:신발"],
+            ["shoot", "/ʃuːt/", "v:쏘다"], ["shooting", "/ˈʃuː.tɪŋ/", "n:사격"], ["shop", "/ʃɒp/", "n:가게"], ["shopping", "/ˈʃɒp.ɪŋ/", "n:쇼핑"], ["short", "/ʃɔːt/", "adj:짧은"],
+            ["shortly", "/ˈʃɔːt.li/", "adv:곧"], ["shot", "/ʃɒt/", "n:발사"], ["should", "/ʃʊd/", "v:해야 한다"], ["shoulder", "/ˈʃəʊl.dər/", "n:어깨"], ["shout", "/ʃaʊt/", "v:소리치다"],
+            ["show", "/ʃəʊ/", "v:보여주다"], ["shower", "/ʃaʊər/", "n:샤워"], ["shut", "/ʃʌt/", "v:닫다"], ["shy", "/ʃaɪ/", "adj:부끄러워하는"], ["sick", "/sɪk/", "adj:아픈"],
+            ["side", "/saɪd/", "n:측면"], ["sideways", "/ˈsaɪd.weɪz/", "adv:옆으로"], ["sight", "/saɪt/", "n:시력"], ["sign", "/saɪn/", "n:표지판"], ["signal", "/ˈsɪɡ.nəl/", "n:신호"],
+            ["signature", "/ˈsɪɡ.nə.tʃər/", "n:서명"], ["significance", "/sɪɡˈnɪf.ɪ.kəns/", "n:중요성"], ["significant", "/sɪɡˈnɪf.ɪ.kənt/", "adj:중요한"], ["significantly", "/sɪɡˈnɪf.ɪ.kənt.li/", "adv:상당히"], ["silence", "/ˈsaɪ.ləns/", "n:침묵"],
+            ["silent", "/ˈsaɪ.lənt/", "adj:조용한"], ["silk", "/sɪlk/", "n:비단"], ["silly", "/ˈsɪl.i/", "adj:어리석은"], ["silver", "/ˈsɪl.vər/", "n:은"], ["similar", "/ˈsɪm.ɪ.lər/", "adj:비슷한"],
+            ["similarly", "/ˈsɪm.ɪ.lə.li/", "adv:비슷하게"], ["simple", "/ˈsɪm.pəl/", "adj:간단한"], ["simply", "/ˈsɪm.pli/", "adv:단지"], ["since", "/sɪns/", "prep:이래로"], ["sincere", "/sɪnˈsɪər/", "adj:진실한"],
+            ["sing", "/sɪŋ/", "v:노래하다"], ["singer", "/ˈsɪŋ.ər/", "n:가수"], ["singing", "/ˈsɪŋ.ɪŋ/", "n:노래"], ["single", "/ˈsɪŋ.ɡəl/", "adj:단 하나의"], ["sink", "/sɪŋk/", "v:가라앉다"],
+            ["sir", "/sɜːr/", "n:경"], ["sister", "/ˈsɪs.tər/", "n:자매"], ["sit", "/sɪt/", "v:앉다"], ["site", "/saɪt/", "n:현장"], ["situation", "/ˌsɪtʃ.uˈeɪ.ʃən/", "n:상황"],
+            ["six", "/sɪks/", "num:6"], ["sixteen", "/ˌsɪkˈstiːn/", "num:16"], ["sixty", "/ˈsɪk.sti/", "num:60"], ["size", "/saɪz/", "n:크기"], ["skill", "/skɪl/", "n:기술"],
+            ["skilled", "/skɪld/", "adj:숙련된"], ["skin", "/skɪn/", "n:피부"], ["skirt", "/skɜːt/", "n:치마"], ["sky", "/skaɪ/", "n:하늘"], ["sleep", "/sliːp/", "v:자다"],
+            ["sleeve", "/sliːv/", "n:소매"], ["slice", "/slaɪs/", "n:조각"], ["slide", "/slaɪd/", "v:미끄러지다"], ["slight", "/slaɪt/", "adj:약간의"], ["slightly", "/ˈslaɪt.li/", "adv:약간"],
+            ["slip", "/slɪp/", "v:미끄러지다"], ["slope", "/sləʊp/", "n:경사"], ["slow", "/sləʊ/", "adj:느린"], ["slowly", "/ˈsləʊ.li/", "adv:천천히"], ["small", "/smɔːl/", "adj:작은"],
+            ["smart", "/smɑːt/", "adj:똑똑한"], ["smell", "/smel/", "n:냄새"], ["smile", "/smaɪl/", "v:미소 짓다"], ["smoke", "/sməʊk/", "v:담배 피우다"], ["smoking", "/ˈsməʊ.kɪŋ/", "n:흡연"],
+            ["smooth", "/smuːð/", "adj:부드러운"], ["snake", "/sneɪk/", "n:뱀"], ["snow", "/snəʊ/", "n:눈"], ["so", "/səʊ/", "adv:그래서"], ["soap", "/səʊp/", "n:비누"],
+            ["soccer", "/ˈsɒk.ər/", "n:축구"], ["social", "/ˈsəʊ.ʃəl/", "adj:사회적인"], ["society", "/səˈsaɪ.ə.ti/", "n:사회"], ["sock", "/sɒk/", "n:양말"], ["soft", "/sɒft/", "adj:부드러운"],
+            ["softly", "/ˈsɒft.li/", "adv:부드럽게"], ["software", "/ˈsɒft.weər/", "n:소프트웨어"], ["soil", "/sɔɪl/", "n:흙"], ["solar", "/ˈsəʊ.lər/", "adj:태양의"], ["soldier", "/ˈsəʊl.dʒər/", "n:군인"],
+            ["solid", "/ˈsɒl.ɪd/", "adj:고체의"], ["solution", "/səˈluː.ʃən/", "n:해결책"], ["solve", "/sɒlv/", "v:해결하다"], ["some", "/sʌm/", "det:일부"], ["somebody", "/ˈsʌm.bə.di/", "pron:누군가"],
+            ["somehow", "/ˈsʌm.haʊ/", "adv:어떻게든"], ["someone", "/ˈsʌm.wʌn/", "pron:누군가"], ["something", "/ˈsʌm.θɪŋ/", "pron:무언가"], ["sometimes", "/ˈsʌm.taɪmz/", "adv:가끔"], ["somewhat", "/ˈsʌm.wɒt/", "adv:다소"],
+            ["somewhere", "/ˈsʌm.weər/", "adv:어딘가에"], ["son", "/sʌn/", "n:아들"], ["song", "/sɒŋ/", "n:노래"], ["soon", "/suːn/", "adv:곧"], ["sore", "/sɔːr/", "adj:아픈"],
+            ["sorry", "/ˈsɒr.i/", "adj:미안한"], ["sort", "/sɔːt/", "n:종류"], ["soul", "/səʊl/", "n:영혼"], ["sound", "/saʊnd/", "n:소리"], ["soup", "/suːp/", "n:수프"],
+            ["sour", "/saʊər/", "adj:신"], ["source", "/sɔːs/", "n:원천"], ["south", "/saʊθ/", "n:남쪽"], ["southern", "/ˈsʌð.ən/", "adj:남쪽의"], ["space", "/speɪs/", "n:공간"],
+            ["spare", "/speər/", "adj:여분의"], ["speak", "/spiːk/", "v:말하다"], ["speaker", "/ˈspiː.kər/", "n:연설자"], ["special", "/ˈspeʃ.əl/", "adj:특별한"], ["specialist", "/ˈspeʃ.əl.ɪst/", "n:전문가"],
+            ["species", "/ˈspiː.ʃiːz/", "n:종"], ["specific", "/spəˈsɪf.ɪk/", "adj:구체적인"], ["specifically", "/spəˈsɪf.ɪ.kəl.i/", "adv:구체적으로"], ["speech", "/spiːtʃ/", "n:연설"], ["speed", "/spiːd/", "n:속도"],
+            ["spell", "/spel/", "v:철자를 말하다"], ["spelling", "/ˈspel.ɪŋ/", "n:철자"], ["spend", "/spend/", "v:쓰다"], ["spice", "/spaɪs/", "n:향신료"], ["spicy", "/ˈspaɪ.si/", "adj:매운"],
+            ["spider", "/ˈspaɪ.dər/", "n:거미"], ["spin", "/spɪn/", "v:돌다"], ["spirit", "/ˈspɪr.ɪt/", "n:정신"], ["spiritual", "/ˈspɪr.ɪ.tʃu.əl/", "adj:정신적인"], ["spite", "/spaɪt/", "n:악의"],
+            ["split", "/splɪt/", "v:나누다"], ["spoil", "/spɔɪl/", "v:망치다"], ["spoken", "/ˈspəʊ.kən/", "adj:구어의"], ["spoon", "/spuːn/", "n:숟가락"], ["sport", "/spɔːt/", "n:스포츠"],
+            ["spot", "/spɒt/", "n:점, 장소"], ["spray", "/spreɪ/", "v:뿌리다"], ["spread", "/spred/", "v:퍼지다"], ["spring", "/sprɪŋ/", "n:봄"], ["square", "/skweər/", "n:정사각형"],
+            ["stable", "/ˈsteɪ.bəl/", "adj:안정된"], ["staff", "/stɑːf/", "n:직원"], ["stage", "/steɪdʒ/", "n:무대"], ["stair", "/steər/", "n:계단"], ["stamp", "/stæmp/", "n:우표"],
+            ["stand", "/stænd/", "v:서다"], ["standard", "/ˈstæn.dəd/", "n:표준"], ["star", "/stɑːr/", "n:별"], ["stare", "/steər/", "v:응시하다"], ["start", "/stɑːt/", "v:시작하다"],
+            ["state", "/steɪt/", "n:상태, 주"], ["statement", "/ˈsteɪt.mənt/", "n:성명"], ["station", "/ˈsteɪ.ʃən/", "n:역"], ["statistic", "/stəˈtɪs.tɪk/", "n:통계"], ["statue", "/ˈstætʃ.uː/", "n:조각상"],
+            ["status", "/ˈsteɪ.təs/", "n:지위"], ["stay", "/steɪ/", "v:머무르다"], ["steak", "/steɪk/", "n:스테이크"], ["steal", "/stiːl/", "v:훔치다"], ["steam", "/stiːm/", "n:증기"],
+            ["steel", "/stiːl/", "n:강철"], ["steep", "/stiːp/", "adj:가파른"], ["steer", "/stɪər/", "v:조종하다"], ["step", "/step/", "n:단계"], ["stick", "/stɪk/", "n:막대기"],
+            ["sticky", "/ˈstɪk.i/", "adj:끈적끈적한"], ["stiff", "/stɪf/", "adj:뻣뻣한"], ["still", "/stɪl/", "adv:여전히"], ["sting", "/stɪŋ/", "v:찌르다"], ["stir", "/stɜːr/", "v:젓다"],
+            ["stock", "/stɒk/", "n:재고"], ["stomach", "/ˈstʌm.ək/", "n:위"], ["stone", "/stəʊn/", "n:돌"], ["stop", "/stɒp/", "v:멈추다"], ["store", "/stɔːr/", "n:가게"],
+            ["storm", "/stɔːm/", "n:폭풍"], ["story", "/ˈstɔː.ri/", "n:이야기"], ["stove", "/stəʊv/", "n:난로"], ["straight", "/streɪt/", "adj:곧은"], ["strain", "/streɪn/", "n:부담"],
+            ["strange", "/streɪndʒ/", "adj:이상한"], ["stranger", "/ˈstreɪn.dʒər/", "n:낯선 사람"], ["strategy", "/ˈstræt.ə.dʒi/", "n:전략"], ["stream", "/striːm/", "n:개울"], ["street", "/striːt/", "n:거리"],
+            ["strength", "/streŋθ/", "n:힘"], ["strengthen", "/ˈstreŋ.θən/", "v:강화하다"], ["stress", "/stres/", "n:스트레스"], ["stressed", "/strest/", "adj:스트레스 받는"], ["stretch", "/stretʃ/", "v:늘이다"],
+            ["strict", "/strɪkt/", "adj:엄격한"], ["strike", "/straɪk/", "v:치다"], ["striking", "/ˈstraɪ.kɪŋ/", "adj:눈에 띄는"], ["string", "/strɪŋ/", "n:끈"], ["strip", "/strɪp/", "n:가늘고 긴 조각"],
+            ["stripe", "/straɪp/", "n:줄무늬"], ["striped", "/straɪpt/", "adj:줄무늬가 있는"], ["stroke", "/strəʊk/", "n:타격"], ["strong", "/strɒŋ/", "adj:강한"], ["strongly", "/ˈstrɒŋ.li/", "adv:강하게"],
+            ["structure", "/ˈstrʌk.tʃər/", "n:구조"], ["struggle", "/ˈstrʌɡ.əl/", "v:투쟁하다"], ["student", "/ˈstjuː.dənt/", "n:학생"], ["studio", "/ˈstjuː.di.əʊ/", "n:스튜디오"], ["study", "/ˈstʌd.i/", "v:공부하다"],
+            ["stuff", "/stʌf/", "n:물건"], ["stupid", "/ˈstjuː.pɪd/", "adj:어리석은"], ["style", "/staɪl/", "n:스타일"], ["subject", "/ˈsʌb.dʒekt/", "n:주제"], ["submit", "/səbˈmɪt/", "v:제출하다"],
+            ["substance", "/ˈsʌb.stəns/", "n:물질"], ["substantial", "/səbˈstæn.ʃəl/", "adj:상당한"], ["succeed", "/səkˈsiːd/", "v:성공하다"], ["success", "/səkˈses/", "n:성공"], ["successful", "/səkˈses.fəl/", "adj:성공적인"],
+            ["successfully", "/səkˈses.fəl.i/", "adv:성공적으로"], ["such", "/sʌtʃ/", "det:그러한"], ["sudden", "/ˈsʌd.ən/", "adj:갑작스러운"], ["suddenly", "/ˈsʌd.ən.li/", "adv:갑자기"], ["suffer", "/ˈsʌf.ər/", "v:고통받다"],
+            ["suffering", "/ˈsʌf.ər.ɪŋ/", "n:고통"], ["sufficient", "/səˈfɪʃ.ənt/", "adj:충분한"], ["sufficiently", "/səˈfɪʃ.ənt.li/", "adv:충분히"], ["sugar", "/ˈʃʊɡ.ər/", "n:설탕"], ["suggest", "/səˈdʒest/", "v:제안하다"],
+            ["suggestion", "/səˈdʒes.tʃən/", "n:제안"], ["suit", "/suːt/", "n:정장"], ["suitable", "/ˈsuː.tə.bəl/", "adj:적절한"], ["suitcase", "/ˈsuːt.keɪs/", "n:여행 가방"], ["sum", "/sʌm/", "n:합계"],
+            ["summer", "/ˈsʌm.ər/", "n:여름"], ["sun", "/sʌn/", "n:태양"], ["sunday", "/ˈsʌn.deɪ/", "n:일요일"], ["supermarket", "/ˈsuː.pəˌmɑː.kɪt/", "n:슈퍼마켓"], ["supply", "/səˈplaɪ/", "n:공급"],
+            ["support", "/səˈpɔːt/", "v:지지하다"], ["supporter", "/səˈpɔː.tər/", "n:지지자"], ["suppose", "/səˈpəʊz/", "v:가정하다"], ["sure", "/ʃɔːr/", "adj:확신하는"], ["surely", "/ˈʃɔː.li/", "adv:확실히"],
+            ["surface", "/ˈsɜː.fɪs/", "n:표면"], ["surgery", "/ˈsɜː.dʒər.i/", "n:수술"], ["surprise", "/səˈpraɪz/", "n:놀라움"], ["surprised", "/səˈpraɪzd/", "adj:놀란"], ["surprising", "/səˈpraɪ.zɪŋ/", "adj:놀라운"],
+            ["surprisingly", "/səˈpraɪ.zɪŋ.li/", "adv:놀랍게도"], ["surround", "/səˈraʊnd/", "v:둘러싸다"], ["surrounding", "/səˈraʊn.dɪŋ/", "adj:주위의"], ["surroundings", "/səˈraʊn.dɪŋz/", "n:환경"], ["survey", "/ˈsɜː.veɪ/", "n:설문조사"],
+            ["survive", "/səˈvaɪv/", "v:생존하다"], ["suspect", "/səˈspekt/", "v:의심하다"], ["suspicion", "/səˈspɪʃ.ən/", "n:의심"], ["suspicious", "/səˈspɪʃ.əs/", "adj:의심스러운"], ["swallow", "/ˈswɒl.əʊ/", "v:삼키다"],
+            ["swear", "/sweər/", "v:맹세하다"], ["sweat", "/swet/", "n:땀"], ["sweater", "/ˈswet.ər/", "n:스웨터"], ["sweep", "/swiːp/", "v:쓸다"], ["sweet", "/swiːt/", "adj:달콤한"],
+            ["swim", "/swɪm/", "v:수영하다"], ["swimming", "/ˈswɪm.ɪŋ/", "n:수영"], ["swing", "/swɪŋ/", "v:흔들다"], ["switch", "/swɪtʃ/", "v:바꾸다"], ["symbol", "/ˈsɪm.bəl/", "n:상징"],
+            ["sympathetic", "/ˌsɪm.pəˈθet.ɪk/", "adj:동정적인"], ["sympathy", "/ˈsɪm.pə.θi/", "n:동정"], ["system", "/ˈsɪs.təm/", "n:시스템"], ["table", "/ˈteɪ.bəl/", "n:테이블"], ["tablet", "/ˈtæb.lət/", "n:태블릿"],
+            ["tackle", "/ˈtæk.əl/", "v:다루다"], ["tail", "/teɪl/", "n:꼬리"], ["take", "/teɪk/", "v:가져가다"], ["tale", "/teɪl/", "n:이야기"], ["talent", "/ˈtæl.ənt/", "n:재능"],
+            ["talented", "/ˈtæl.ən.tɪd/", "adj:재능 있는"], ["talk", "/tɔːk/", "v:말하다"], ["tall", "/tɔːl/", "adj:키가 큰"], ["tank", "/tæŋk/", "n:탱크"], ["tap", "/tæp/", "v:두드리다"],
+            ["tape", "/teɪp/", "n:테이프"], ["target", "/ˈtɑː.ɡɪt/", "n:목표"], ["task", "/tɑːsk/", "n:과제"], ["taste", "/teɪst/", "n:맛"], ["tasty", "/ˈteɪ.sti/", "adj:맛있는"],
+            ["tax", "/tæks/", "n:세금"], ["taxi", "/ˈtæk.si/", "n:택시"], ["tea", "/tiː/", "n:차"], ["teach", "/tiːtʃ/", "v:가르치다"], ["teacher", "/ˈtiː.tʃər/", "n:선생님"],
+            ["teaching", "/ˈtiː.tʃɪŋ/", "n:가르침"], ["team", "/tiːm/", "n:팀"], ["tear", "/teər/", "n:눈물"], ["technical", "/ˈtek.nɪ.kəl/", "adj:기술적인"], ["technique", "/tekˈniːk/", "n:기법"],
+            ["technology", "/tekˈnɒl.ə.dʒi/", "n:기술"], ["telephone", "/ˈtel.ɪ.fəʊn/", "n:전화"], ["television", "/ˈtel.ɪ.vɪʒ.ən/", "n:텔레비전"], ["tell", "/tel/", "v:말하다"], ["temperature", "/ˈtem.prə.tʃər/", "n:온도"],
+            ["temporary", "/ˈtem.pər.ər.i/", "adj:일시적인"], ["ten", "/ten/", "num:10"], ["tend", "/tend/", "v:경향이 있다"], ["tendency", "/ˈten.dən.si/", "n:경향"], ["tennis", "/ˈten.ɪs/", "n:테니스"],
+            ["tension", "/ˈten.ʃən/", "n:긴장"], ["tent", "/tent/", "n:텐트"], ["term", "/tɜːm/", "n:용어"], ["terrible", "/ˈter.ə.bəl/", "adj:끔찍한"], ["terribly", "/ˈter.ə.bli/", "adv:몹시"],
+            ["territory", "/ˈter.ɪ.tər.i/", "n:영토"], ["terror", "/ˈter.ər/", "n:공포"], ["terrorism", "/ˈter.ər.ɪ.zəm/", "n:테러리즘"], ["terrorist", "/ˈter.ər.ɪst/", "n:테러리스트"], ["test", "/test/", "n:시험"],
+            ["text", "/tekst/", "n:문자"], ["than", "/ðæn/", "conj:보다"], ["thank", "/θæŋk/", "v:감사하다"], ["thanks", "/θæŋks/", "n:감사"], ["that", "/ðæt/", "det:저것"],
+            ["the", "/ðə/", "det:그"], ["theatre", "/ˈθɪə.tər/", "n:극장"], ["their", "/ðeər/", "det:그들의"], ["theirs", "/ðeəz/", "pron:그들의 것"], ["them", "/ðem/", "pron:그들을"],
+            ["theme", "/θiːm/", "n:주제"], ["themselves", "/ðəmˈselvz/", "pron:그들 자신"], ["then", "/ðen/", "adv:그때"], ["theoretical", "/ˌθɪəˈret.ɪ.kəl/", "adj:이론적인"], ["theory", "/ˈθɪə.ri/", "n:이론"],
+            ["there", "/ðeər/", "adv:거기에"], ["therefore", "/ˈðeə.fɔːr/", "adv:그러므로"], ["they", "/ðeɪ/", "pron:그들은"], ["thick", "/θɪk/", "adj:두꺼운"], ["thickly", "/ˈθɪk.li/", "adv:두껍게"],
+            ["thickness", "/ˈθɪk.nəs/", "n:두께"], ["thief", "/θiːf/", "n:도둑"], ["thin", "/θɪn/", "adj:얇은"], ["thing", "/θɪŋ/", "n:것"], ["think", "/θɪŋk/", "v:생각하다"],
+            ["thinking", "/ˈθɪŋ.kɪŋ/", "n:생각"], ["third", "/θɜːd/", "num:셋째"], ["thirsty", "/ˈθɜː.sti/", "adj:목마른"], ["thirteen", "/θɜːˈtiːn/", "num:13"], ["thirty", "/ˈθɜː.ti/", "num:30"],
+            ["this", "/ðɪs/", "det:이것"], ["thorough", "/ˈθʌr.ə/", "adj:철저한"], ["thoroughly", "/ˈθʌr.ə.li/", "adv:철저히"], ["though", "/ðəʊ/", "conj:비록 ~일지라도"], ["thought", "/θɔːt/", "n:생각"],
+            ["thousand", "/ˈθaʊ.zənd/", "num:1000"], ["thread", "/θred/", "n:실"], ["threat", "/θret/", "n:위협"], ["threaten", "/ˈθret.ən/", "v:위협하다"], ["threatening", "/ˈθret.ən.ɪŋ/", "adj:위협적인"],
+            ["three", "/θriː/", "num:3"], ["throat", "/θrəʊt/", "n:목구멍"], ["through", "/θruː/", "prep:통하여"], ["throughout", "/θruːˈaʊt/", "prep:도처에"], ["throw", "/θrəʊ/", "v:던지다"],
+            ["thumb", "/θʌm/", "n:엄지손가락"], ["thunder", "/ˈθʌn.dər/", "n:천둥"], ["thursday", "/ˈθɜːz.deɪ/", "n:목요일"], ["ticket", "/ˈtɪk.ɪt/", "n:표"], ["tidy", "/ˈtaɪ.di/", "adj:깔끔한"],
+            ["tie", "/taɪ/", "v:묶다"], ["tight", "/taɪt/", "adj:꽉 끼는"], ["tightly", "/ˈtaɪt.li/", "adv:단단히"], ["till", "/tɪl/", "prep:까지"], ["time", "/taɪm/", "n:시간"],
+            ["timetable", "/ˈtaɪmˌteɪ.bəl/", "n:시간표"], ["tin", "/tɪn/", "n:주석"], ["tiny", "/ˈtaɪ.ni/", "adj:아주 작은"], ["tip", "/tɪp/", "n:팁, 끝"], ["tire", "/taɪər/", "v:피곤하게 하다"],
+            ["tired", "/taɪəd/", "adj:피곤한"], ["tiring", "/ˈtaɪə.rɪŋ/", "adj:피곤하게 하는"], ["title", "/ˈtaɪ.təl/", "n:제목"], ["to", "/tuː/", "prep:에게"], ["toast", "/təʊst/", "n:토스트"],
+            ["today", "/təˈdeɪ/", "n:오늘"], ["toe", "/təʊ/", "n:발가락"], ["together", "/təˈɡeð.ər/", "adv:함께"], ["toilet", "/ˈtɔɪ.lət/", "n:화장실"], ["tomato", "/təˈmɑː.təʊ/", "n:토마토"],
+            ["tomorrow", "/təˈmɒr.əʊ/", "n:내일"], ["ton", "/tʌn/", "n:톤"], ["tone", "/təʊn/", "n:어조"], ["tongue", "/tʌŋ/", "n:혀"], ["tonight", "/təˈnaɪt/", "n:오늘밤"],
+            ["too", "/tuː/", "adv:너무"], ["tool", "/tuːl/", "n:도구"], ["tooth", "/tuːθ/", "n:이"], ["top", "/tɒp/", "n:맨 위"], ["topic", "/ˈtɒp.ɪk/", "n:주제"],
+            ["total", "/ˈtəʊ.təl/", "adj:총"], ["totally", "/ˈtəʊ.təl.i/", "adv:완전히"], ["touch", "/tʌtʃ/", "v:만지다"], ["tough", "/tʌf/", "adj:거친"], ["tour", "/tʊər/", "n:여행"],
+            ["tourism", "/ˈtʊə.rɪ.zəm/", "n:관광"], ["tourist", "/ˈtʊə.rɪst/", "n:관광객"], ["toward", "/təˈwɔːd/", "prep:향하여"], ["towards", "/təˈwɔːdz/", "prep:향하여"], ["towel", "/taʊəl/", "n:수건"],
+            ["tower", "/taʊər/", "n:탑"], ["town", "/taʊn/", "n:마을"], ["toy", "/tɔɪ/", "n:장난감"], ["track", "/træk/", "n:트랙"], ["trade", "/treɪd/", "n:무역"],
+            ["tradition", "/trəˈdɪʃ.ən/", "n:전통"], ["traditional", "/trəˈdɪʃ.ən.əl/", "adj:전통적인"], ["traffic", "/ˈtræf.ɪk/", "n:교통"], ["train", "/treɪn/", "n:기차"], ["trainer", "/ˈtreɪ.nər/", "n:운동화"],
+            ["training", "/ˈtreɪ.nɪŋ/", "n:훈련"], ["transfer", "/trænsˈfɜːr/", "v:이동하다"], ["transform", "/trænsˈfɔːm/", "v:변형하다"], ["transition", "/trænˈzɪʃ.ən/", "n:전환"], ["translate", "/trænzˈleɪt/", "v:번역하다"],
+            ["translation", "/trænzˈleɪ.ʃən/", "n:번역"], ["transport", "/ˈtræn.spɔːt/", "n:수송"], ["transportation", "/ˌtræn.spɔːˈteɪ.ʃən/", "n:수송"], ["trash", "/træʃ/", "n:쓰레기"], ["travel", "/ˈtræv.əl/", "v:여행하다"],
+            ["traveller", "/ˈtræv.əl.ər/", "n:여행자"], ["treat", "/triːt/", "v:대우하다"], ["treatment", "/ˈtriːt.mənt/", "n:대우"], ["tree", "/triː/", "n:나무"], ["trend", "/trend/", "n:추세"],
+            ["trial", "/traɪəl/", "n:재판"], ["tribe", "/traɪb/", "n:부족"], ["trick", "/trɪk/", "n:속임수"], ["trip", "/trɪp/", "n:여행"], ["troop", "/truːp/", "n:병력"],
+            ["tropical", "/ˈtrɒp.ɪ.kəl/", "adj:열대의"], ["trouble", "/ˈtrʌb.əl/", "n:문제"], ["trousers", "/ˈtraʊ.zəz/", "n:바지"], ["truck", "/trʌk/", "n:트럭"], ["true", "/truː/", "adj:사실인"],
+            ["truly", "/ˈtruː.li/", "adv:진심으로"], ["trust", "/trʌst/", "n:신뢰"], ["truth", "/truːθ/", "n:진실"], ["try", "/traɪ/", "v:시도하다"], ["t-shirt", "/ˈtiː.ʃɜːt/", "n:티셔츠"],
+            ["tube", "/tjuːb/", "n:관"], ["tuesday", "/ˈtjuːz.deɪ/", "n:화요일"], ["tune", "/tjuːn/", "n:곡"], ["tunnel", "/ˈtʌn.əl/", "n:터널"], ["turn", "/tɜːn/", "v:돌다"],
+            ["tv", "/ˌtiːˈviː/", "n:TV"], ["twelve", "/twelv/", "num:12"], ["twenty", "/ˈtwen.ti/", "num:20"], ["twice", "/twaɪs/", "adv:두 번"], ["twin", "/twɪn/", "n:쌍둥이"],
+            ["twist", "/twɪst/", "v:비틀다"], ["two", "/tuː/", "num:2"], ["type", "/taɪp/", "n:유형"], ["typical", "/ˈtɪp.ɪ.kəl/", "adj:전형적인"], ["typically", "/ˈtɪp.ɪ.kəl.i/", "adv:전형적으로"],
+            ["tyre", "/taɪər/", "n:타이어"], ["ugly", "/ˈʌɡ.li/", "adj:못생긴"], ["ultimate", "/ˈʌl.tɪ.mət/", "adj:궁극적인"], ["ultimately", "/ˈʌl.tɪ.mət.li/", "adv:궁극적으로"], ["umbrella", "/ʌmˈbrel.ə/", "n:우산"],
+            ["unable", "/ʌnˈeɪ.bəl/", "adj:할 수 없는"], ["unacceptable", "/ˌʌn.əkˈsep.tə.bəl/", "adj:용납할 수 없는"], ["uncertainty", "/ʌnˈsɜː.tən.ti/", "n:불확실성"], ["uncle", "/ˈʌŋ.kəl/", "n:삼촌"], ["uncomfortable", "/ʌnˈkʌmp.fə.tə.bəl/", "adj:불편한"],
+            ["unconscious", "/ʌnˈkɒn.ʃəs/", "adj:무의식적인"], ["under", "/ˈʌn.dər/", "prep:아래에"], ["underground", "/ˈʌn.də.ɡraʊnd/", "adj:지하의"], ["understand", "/ˌʌn.dəˈstænd/", "v:이해하다"], ["understanding", "/ˌʌn.dəˈstæn.dɪŋ/", "n:이해"],
+            ["underwear", "/ˈʌn.də.weər/", "n:속옷"], ["undo", "/ʌnˈduː/", "v:원상태로 돌리다"], ["unemployed", "/ˌʌn.ɪmˈplɔɪd/", "adj:실직한"], ["unemployment", "/ˌʌn.ɪmˈplɔɪ.mənt/", "n:실업"], ["unexpected", "/ˌʌn.ɪkˈspek.tɪd/", "adj:예기치 않은"],
+            ["unfairly", "/ʌnˈfeə.li/", "adv:부당하게"], ["unfortunate", "/ʌnˈfɔː.tʃən.ət/", "adj:불행한"], ["unfortunately", "/ʌnˈfɔː.tʃən.ət.li/", "adv:불행히도"], ["unhappy", "/ʌnˈhæp.i/", "adj:불행한"], ["uniform", "/ˈjuː.nɪ.fɔːm/", "n:유니폼"],
+            ["union", "/ˈjuː.njən/", "n:조합"], ["unique", "/juːˈniːk/", "adj:독특한"], ["unit", "/ˈjuː.nɪt/", "n:단위"], ["united", "/juːˈnaɪ.tɪd/", "adj:연합한"], ["universe", "/ˈjuː.nɪ.vɜːs/", "n:우주"],
+            ["university", "/ˌjuː.nɪˈvɜː.sə.ti/", "n:대학교"], ["unknown", "/ʌnˈnəʊn/", "adj:알려지지 않은"], ["unless", "/ənˈles/", "conj:하지 않으면"], ["unlike", "/ʌnˈlaɪk/", "prep:달리"], ["unlikely", "/ʌnˈlaɪ.kli/", "adj:가망 없는"],
+            ["until", "/ənˈtɪl/", "prep:까지"], ["unusual", "/ʌnˈjuː.ʒu.əl/", "adj:특이한"], ["up", "/ʌp/", "adv:위로"], ["update", "/ʌpˈdeɪt/", "v:갱신하다"], ["upon", "/əˈpɒn/", "prep:위에"],
+            ["upper", "/ˈʌp.ər/", "adj:위쪽의"], ["upset", "/ʌpˈset/", "adj:속상한"], ["upstairs", "/ʌpˈsteəz/", "adv:위층으로"], ["upwards", "/ˈʌp.wədz/", "adv:위쪽으로"], ["urban", "/ˈɜː.bən/", "adj:도시의"],
+            ["urge", "/ɜːdʒ/", "v:충고하다"], ["urgent", "/ˈɜː.dʒənt/", "adj:긴급한"], ["us", "/ʌs/", "pron:우리를"], ["use", "/juːz/", "v:사용하다"], ["used", "/juːzd/", "adj:중고의"],
+            ["used to", "/juːst tuː/", "adj:익숙한"], ["useful", "/ˈjuːs.fəl/", "adj:유용한"], ["useless", "/ˈjuːs.ləs/", "adj:쓸모없는"], ["user", "/ˈjuː.zər/", "n:사용자"], ["usual", "/ˈjuː.ʒu.əl/", "adj:보통의"],
+            ["usually", "/ˈjuː.ʒu.ə.li/", "adv:보통"], ["vacation", "/veɪˈkeɪ.ʃən/", "n:휴가"], ["valid", "/ˈvæl.ɪd/", "adj:유효한"], ["valley", "/ˈvæl.i/", "n:계곡"], ["valuable", "/ˈvæl.jə.bəl/", "adj:귀중한"],
+            ["value", "/ˈvæl.juː/", "n:가치"], ["van", "/væn/", "n:밴"], ["vanilla", "/vəˈnɪl.ə/", "n:바닐라"], ["variety", "/vəˈraɪ.ə.ti/", "n:다양성"], ["various", "/ˈveə.ri.əs/", "adj:다양한"],
+            ["vary", "/ˈveə.ri/", "v:다르다"], ["vast", "/vɑːst/", "adj:광대한"], ["vegetable", "/ˈvedʒ.tə.bəl/", "n:채소"], ["vehicle", "/ˈviː.ə.kəl/", "n:차량"], ["version", "/ˈvɜː.ʃən/", "n:버전"],
+            ["very", "/ˈver.i/", "adv:매우"], ["via", "/ˈvaɪə/", "prep:경유하여"], ["victim", "/ˈvɪk.tɪm/", "n:피해자"], ["victory", "/ˈvɪk.tər.i/", "n:승리"], ["video", "/ˈvɪd.i.əʊ/", "n:비디오"],
+            ["view", "/vjuː/", "n:전망"], ["village", "/ˈvɪl.ɪdʒ/", "n:마을"], ["violence", "/ˈvaɪə.ləns/", "n:폭력"], ["violent", "/ˈvaɪə.lənt/", "adj:폭력적인"], ["violently", "/ˈvaɪə.lənt.li/", "adv:격렬하게"],
+            ["virtual", "/ˈvɜː.tʃu.əl/", "adj:가상의"], ["virus", "/ˈvaɪə.rəs/", "n:바이러스"], ["visible", "/ˈvɪz.ə.bəl/", "adj:보이는"], ["vision", "/ˈvɪʒ.ən/", "n:시력"], ["visit", "/ˈvɪz.ɪt/", "v:방문하다"],
+            ["visitor", "/ˈvɪz.ɪ.tər/", "n:방문객"], ["visual", "/ˈvɪʒ.u.əl/", "adj:시각의"], ["vital", "/ˈvaɪ.təl/", "adj:필수적인"], ["vitamin", "/ˈvɪt.ə.mɪn/", "n:비타민"], ["voice", "/vɔɪs/", "n:목소리"],
+            ["volume", "/ˈvɒl.juːm/", "n:부피"], ["volunteer", "/ˌvɒl.ənˈtɪər/", "n:자원봉사자"], ["vote", "/vəʊt/", "v:투표하다"], ["wage", "/weɪdʒ/", "n:임금"], ["wait", "/weɪt/", "v:기다리다"],
+            ["waiter", "/ˈweɪ.tər/", "n:웨이터"], ["wake", "/weɪk/", "v:깨다"], ["walk", "/wɔːk/", "v:걷다"], ["wall", "/wɔːl/", "n:벽"], ["want", "/wɒnt/", "v:원하다"],
+            ["war", "/wɔːr/", "n:전쟁"], ["warm", "/wɔːm/", "adj:따뜻한"], ["warn", "/wɔːn/", "v:경고하다"], ["warning", "/ˈwɔː.nɪŋ/", "n:경고"], ["wash", "/wɒʃ/", "v:씻다"],
+            ["washing", "/ˈwɒʃ.ɪŋ/", "n:세탁"], ["waste", "/weɪst/", "n:낭비"], ["watch", "/wɒtʃ/", "v:지켜보다"], ["water", "/ˈwɔː.tər/", "n:물"], ["wave", "/weɪv/", "n:파도"],
+            ["way", "/weɪ/", "n:길"], ["we", "/wiː/", "pron:우리는"], ["weak", "/wiːk/", "adj:약한"], ["weakness", "/ˈwiːk.nəs/", "n:약점"], ["wealth", "/welθ/", "n:부"],
+            ["wealthy", "/ˈwel.θi/", "adj:부유한"], ["weapon", "/ˈwep.ən/", "n:무기"], ["wear", "/weər/", "v:입다"], ["weather", "/ˈweð.ər/", "n:날씨"], ["web", "/web/", "n:거미줄, 웹"],
+            ["website", "/ˈweb.saɪt/", "n:웹사이트"], ["wedding", "/ˈwed.ɪŋ/", "n:결혼식"], ["wednesday", "/ˈwenz.deɪ/", "n:수요일"], ["week", "/wiːk/", "n:주"], ["weekend", "/ˌwiːkˈend/", "n:주말"],
+            ["weekly", "/ˈwiːk.li/", "adj:매주의"], ["weigh", "/weɪ/", "v:무게가 나가다"], ["weight", "/weɪt/", "n:무게"], ["welcome", "/ˈwel.kəm/", "v:환영하다"], ["well", "/wel/", "adv:잘"],
+            ["west", "/west/", "n:서쪽"], ["western", "/ˈwes.tən/", "adj:서쪽의"], ["wet", "/wet/", "adj:젖은"], ["what", "/wɒt/", "pron:무엇"], ["whatever", "/wɒtˈev.ər/", "det:무엇이든"],
+            ["wheel", "/wiːl/", "n:바퀴"], ["when", "/wen/", "adv:언제"], ["whenever", "/wenˈev.ər/", "conj:할 때마다"], ["where", "/weər/", "adv:어디에"], ["whereas", "/weərˈæz/", "conj:반면에"],
+            ["wherever", "/weərˈev.ər/", "conj:어디든지"], ["whether", "/ˈweð.ər/", "conj:인지 아닌지"], ["which", "/wɪtʃ/", "det:어느"], ["while", "/waɪl/", "conj:동안에"], ["whisper", "/ˈwɪs.pər/", "v:속삭이다"],
+            ["whistle", "/ˈwɪs.əl/", "v:휘파람 불다"], ["white", "/waɪt/", "adj:흰"], ["who", "/huː/", "pron:누구"], ["whoever", "/huːˈev.ər/", "pron:누구든지"], ["whole", "/həʊl/", "adj:전체의"],
+            ["whom", "/huːm/", "pron:누구를"], ["whose", "/huːz/", "det:누구의"], ["why", "/waɪ/", "adv:왜"], ["wide", "/waɪd/", "adj:넓은"], ["widely", "/ˈwaɪd.li/", "adv:널리"],
+            ["width", "/wɪtθ/", "n:너비"], ["wife", "/waɪf/", "n:아내"], ["wild", "/waɪld/", "adj:야생의"], ["wildly", "/ˈwaɪld.li/", "adv:몹시"], ["will", "/wɪl/", "v:할 것이다"],
+            ["willing", "/ˈwɪl.ɪŋ/", "adj:기꺼이 하는"], ["win", "/wɪn/", "v:이기다"], ["wind", "/wɪnd/", "n:바람"], ["window", "/ˈwɪn.dəʊ/", "n:창문"], ["wine", "/waɪn/", "n:와인"],
+            ["wing", "/wɪŋ/", "n:날개"], ["winner", "/ˈwɪn.ər/", "n:승자"], ["winter", "/ˈwɪn.tər/", "n:겨울"], ["wire", "/waɪər/", "n:철사"], ["wise", "/waɪz/", "adj:현명한"],
+            ["wish", "/wɪʃ/", "v:바라다"], ["with", "/wɪð/", "prep:함께"], ["within", "/wɪˈðɪn/", "prep:이내에"], ["without", "/wɪˈðaʊt/", "prep:없이"], ["witness", "/ˈwɪt.nəs/", "n:목격자"],
+            ["woman", "/ˈwʊm.ən/", "n:여자"], ["wonder", "/ˈwʌn.dər/", "v:궁금해하다"], ["wonderful", "/ˈwʌn.də.fəl/", "adj:멋진"], ["wood", "/wʊd/", "n:나무"], ["wooden", "/ˈwʊd.ən/", "adj:나무로 된"],
+            ["wool", "/wʊl/", "n:양모"], ["word", "/wɜːd/", "n:단어"], ["work", "/wɜːk/", "v:일하다"], ["worker", "/ˈwɜː.kər/", "n:노동자"], ["working", "/ˈwɜː.kɪŋ/", "adj:일하는"],
+            ["world", "/wɜːld/", "n:세계"], ["worried", "/ˈwʌr.id/", "adj:걱정하는"], ["worry", "/ˈwʌr.i/", "v:걱정하다"], ["worrying", "/ˈwʌr.i.ɪŋ/", "adj:걱정스러운"], ["worse", "/wɜːs/", "adj:더 나쁜"],
+            ["worth", "/wɜːθ/", "adj:가치가 있는"], ["would", "/wʊd/", "v:할 것이다"], ["wound", "/wuːnd/", "n:상처"], ["wounded", "/ˈwuːn.dɪd/", "adj:부상당한"], ["wrap", "/ræp/", "v:싸다"],
+            ["wrist", "/rɪst/", "n:손목"], ["write", "/raɪt/", "v:쓰다"], ["writer", "/ˈraɪ.tər/", "n:작가"], ["writing", "/ˈraɪ.tɪŋ/", "n:쓰기"], ["written", "/ˈrɪt.ən/", "adj:쓰여진"],
+            ["wrong", "/rɒŋ/", "adj:틀린"], ["yard", "/jɑːd/", "n:마당"], ["yeah", "/jeə/", "int:응"], ["year", "/jɪər/", "n:년"], ["yellow", "/ˈjel.əʊ/", "adj:노란"],
+            ["yes", "/jes/", "int:네"], ["yesterday", "/ˈjes.tə.deɪ/", "n:어제"], ["yet", "/jet/", "adv:아직"], ["you", "/juː/", "pron:너"], ["young", "/jʌŋ/", "adj:젊은"],
+            ["your", "/jɔːr/", "det:너의"], ["yours", "/jɔːz/", "pron:너의 것"], ["yourself", "/jɔːˈself/", "pron:너 자신"], ["youth", "/juːθ/", "n:청년"], ["zero", "/ˈzɪə.rəʊ/", "num:0"],
+            ["zone", "/zəʊn/", "n:구역"], ["zoo", "/zuː/", "n:동물원"]
         ];
 
         // --- State Management ---
-        // learnedMap: { id: level (0, 1, 2, 3) }
         let vocabData = [];
         let currentIndex = 0;
-        let learnedMap = JSON.parse(localStorage.getItem('a2_vocab_levels')) || {}; // Changed to A2 storage
+        let learnedMap = JSON.parse(localStorage.getItem('a2_vocab_levels')) || {};
         let filteredIndices = [];
-        let isFilteredMode = true; // Default to filtering mastered words
+        let isFilteredMode = true; 
         let searchTerm = "";
 
         // --- Initialization ---
         window.onload = function() {
             parseVocabData();
             
-            // Clean up potentially conflicting old A1 data if user switched from old file
-            // (Optional, mostly we just ignore a1 data here)
-
             setTimeout(() => {
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('header-title').textContent = `A2 라이트너 (${vocabData.length})`;
@@ -497,7 +905,6 @@
         
         function updateFilteredIndices() {
             if (isFilteredMode) {
-                // Filter out Level 3 (Mastered) words
                 filteredIndices = vocabData
                     .map((_, index) => index)
                     .filter(index => {
@@ -506,18 +913,15 @@
                     });
                 
                 if (filteredIndices.length === 0 && vocabData.length > 0) {
-                   // All words mastered!
                    alert("대단합니다! 모든 A2 단어를 마스터(3단계) 하셨습니다! 전체 복습을 위해 필터를 해제합니다.");
                    document.getElementById('hide-mastered').checked = false;
                    isFilteredMode = false;
                    filteredIndices = vocabData.map((_, index) => index);
                 }
             } else {
-                // All words
                 filteredIndices = vocabData.map((_, index) => index);
             }
             
-            // Shuffle logic could be added here for SRS, but simple cycle for now
             if (currentIndex >= filteredIndices.length) currentIndex = 0;
         }
 
@@ -535,7 +939,6 @@
             const card = document.getElementById('flashcard');
             const data = getCurrentWordData();
             
-            // Reset flip state
             card.classList.remove('flipped');
 
             if (!data) {
@@ -546,24 +949,19 @@
 
             const level = getLevel(data.id);
 
-            // Visualizing Levels (Dots)
             const indicator = document.getElementById('level-indicator-front');
             indicator.innerHTML = '';
-            // 3 dots total
             for(let i=0; i<3; i++) {
                 const dot = document.createElement('div');
                 dot.className = `step-dot ${i < level ? getColorForLevel(level) : ''}`;
                 indicator.appendChild(dot);
             }
 
-            // Border Color based on level
             const frontFace = document.getElementById('card-front-border');
             frontFace.style.borderColor = getBorderColor(level);
 
-            // Front
             document.getElementById('card-word').textContent = data.word;
             
-            // Back
             document.getElementById('card-word-back').textContent = data.word;
             document.getElementById('card-phonetic').textContent = data.phonetic || "";
             
@@ -587,7 +985,6 @@
                 meaningsContainer.appendChild(row);
             });
 
-            // Update Counter
             document.getElementById('counter-text').textContent = `${currentIndex + 1} / ${filteredIndices.length}`;
         }
 
@@ -605,7 +1002,6 @@
             return '#E5E7EB'; // Gray
         }
 
-        // --- Helpers ---
         function getPosColor(pos) {
             switch(pos) {
                 case 'n': return 'bg-blue-100 text-blue-700';
@@ -617,7 +1013,6 @@
         }
 
         function getPosKorean(pos) {
-            // Simplified mapping
             const map = {
                 'n': '명사', 'v': '동사', 'adj': '형용사', 'adv': '부사',
                 'num': '수사', 'prep': '전치사', 'int': '감탄사', 'pron': '대명사',
@@ -625,8 +1020,6 @@
             };
             return map[pos] || pos;
         }
-
-        // --- Interactions ---
 
         function flipCard() {
             const card = document.getElementById('flashcard');
@@ -639,21 +1032,16 @@
 
             let currentLevel = learnedMap[data.id] || 0;
             
-            // Logic:
-            // Change +1 -> Level Up (Max 3)
-            // Change -1 -> Level Down (Min 0)
-            
             let newLevel = currentLevel + change;
             if (newLevel < 0) newLevel = 0;
             if (newLevel > 3) newLevel = 3;
 
             learnedMap[data.id] = newLevel;
-            localStorage.setItem('a2_vocab_levels', JSON.stringify(learnedMap)); // A2 Storage
+            localStorage.setItem('a2_vocab_levels', JSON.stringify(learnedMap));
 
             updateProgress();
-            renderList(); // Update list indicators
+            renderList();
 
-            // Slight delay to show result then move
             if (isFilteredMode && newLevel === 3) {
                  setTimeout(() => {
                     updateFilteredIndices();
@@ -695,13 +1083,10 @@
         function updateProgress() {
             if (vocabData.length === 0) return;
             
-            // Count Mastered (Level 3)
             const masteredCount = Object.values(learnedMap).filter(l => l === 3).length;
             const percentage = Math.round((masteredCount / vocabData.length) * 100);
             document.getElementById('progress-text').textContent = `${percentage}%`;
         }
-
-        // --- List View Logic ---
         
         function switchTab(tab) {
             const btnStudy = document.getElementById('tab-study');
@@ -710,8 +1095,8 @@
             const viewList = document.getElementById('view-list');
 
             if (tab === 'study') {
-                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all";
-                btnList.className = "flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all";
+                btnStudy.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all";
+                btnList.className = "flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all";
                 viewStudy.classList.remove('hidden');
                 viewStudy.classList.add('flex');
                 
@@ -719,8 +1104,8 @@
                 viewList.classList.remove('flex');
                 renderCard(); 
             } else {
-                btnList.className = "flex-1 py-2 text-sm font-medium rounded-md bg-white shadow text-indigo-600 transition-all";
-                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 transition-all";
+                btnList.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition-all";
+                btnStudy.className = "flex-1 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all";
                 viewList.classList.remove('hidden');
                 viewList.classList.add('flex');
                 
@@ -746,7 +1131,6 @@
                 return;
             }
 
-            // Limit for performance
             const displayList = filteredList.slice(0, 100); 
 
             displayList.forEach(item => {
@@ -762,7 +1146,6 @@
                    switchTab('study');
                 };
 
-                // Level Badge
                 let levelBadge = '';
                 if (level === 0) levelBadge = '<span class="text-[10px] text-gray-400 border border-gray-200 px-2 py-0.5 rounded">시작 전</span>';
                 else if (level === 1) levelBadge = '<span class="text-[10px] text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded font-bold">학습 중</span>';
@@ -795,11 +1178,9 @@
 
         function resetAllData() {
             if(confirm('모든 A2 학습 기록을 초기화 하시겠습니까?\n(주의: 모든 진행 상황이 삭제됩니다)')) {
-                // 1. 데이터 초기화 (A2)
                 learnedMap = {};
                 localStorage.removeItem('a2_vocab_levels');
                 
-                // 2. 검색 및 필터 상태 초기화
                 searchTerm = "";
                 document.getElementById('search-input').value = "";
                 
@@ -808,7 +1189,6 @@
                 
                 currentIndex = 0;
 
-                // 3. 화면 갱신
                 updateProgress();
                 updateFilteredIndices();
                 renderCard();
